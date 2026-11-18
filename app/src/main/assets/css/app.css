@@ -1,0 +1,134 @@
+/* Motyw: kartka papieru milimetrowego z pracowni fizycznej – granatowy atrament, pomarańczowa siatka */
+:root {
+  color-scheme: light dark;
+  --paper: light-dark(#fbf7ef, #12161f);
+  --grid: light-dark(#f3e1cc, #1b2130);
+  --grid2: light-dark(#ecc9a4, #232b3d);
+  --ink: light-dark(#1b2a4a, #e3e8f2);
+  --mut: light-dark(#5d6680, #98a2b8);
+  --acc: light-dark(#d9480f, #ff8a4c);
+  --acc-soft: light-dark(#fff0e4, #2a1f18);
+  --card: light-dark(#ffffff, #191f2b);
+  --line: light-dark(#e6d6c3, #2b3446);
+  --ok: light-dark(#1e7b45, #5fd394);
+  --ok-soft: light-dark(#e6f5ec, #13281d);
+  --bad: light-dark(#c42d3c, #ff7b88);
+  --bad-soft: light-dark(#fdebed, #2c1519);
+  --top: light-dark(#1b2a4a, #0c1018);
+}
+:root[data-theme=light] { color-scheme: light }
+:root[data-theme=dark] { color-scheme: dark }
+* { box-sizing: border-box; min-width: 0 }
+html { -webkit-text-size-adjust: 100% }
+body {
+  margin: 0; color: var(--ink); font: 16.5px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background-color: var(--paper);
+  background-image: linear-gradient(var(--grid2) 1px, transparent 1px), linear-gradient(90deg, var(--grid2) 1px, transparent 1px),
+    linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 50px 50px, 50px 50px, 10px 10px, 10px 10px;
+  padding-bottom: calc(76px + env(safe-area-inset-bottom));
+}
+a { color: var(--acc) }
+.top { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 8px; padding: 10px 12px; padding-top: calc(10px + env(safe-area-inset-top)); background: var(--top); color: #fff; box-shadow: 0 2px 10px #0003 }
+.top h1 { flex: 1; margin: 0; font: 600 17px/1.2 Georgia, "Times New Roman", serif; letter-spacing: .2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+.icon { background: none; border: 0; color: #fff; font-size: 22px; padding: 4px 8px; cursor: pointer }
+main { max-width: 760px; margin: 0 auto; padding: 14px 12px }
+#nav { position: fixed; bottom: 0; left: 0; right: 0; z-index: 5; display: flex; background: var(--card); border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom) }
+#nav a { flex: 1; text-align: center; text-decoration: none; color: var(--mut); font-size: 11.5px; padding: 7px 0 8px; display: flex; flex-direction: column; align-items: center; gap: 1px }
+#nav a span { font-size: 19px; line-height: 1.2 }
+#nav a.on { color: var(--acc); font-weight: 700 }
+h2, h3 { font-family: Georgia, "Times New Roman", serif; line-height: 1.25 }
+.sec { margin: 22px 0 10px }
+.muted { color: var(--mut) }
+.small { font-size: 13.5px }
+.hero, .bundle, .theory, .score { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px; margin: 0 0 14px; box-shadow: 0 1px 0 #0000000a }
+.hero h2 { margin: 0 0 6px }
+.hero ul { padding-left: 20px }
+.cta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px }
+.btn, button.primary, button.ghost { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 10px 14px; border-radius: 10px; border: 1px solid var(--line); background: var(--card); color: var(--ink); text-decoration: none; font: inherit; font-weight: 600; cursor: pointer }
+.btn.primary, button.primary { background: var(--acc); border-color: var(--acc); color: #fff }
+.btn.ghost, button.ghost { background: transparent; font-weight: 500 }
+.btn.wide { width: 100%; margin: 6px 0 14px }
+button:disabled { opacity: .5 }
+.areas { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px }
+.area { display: flex; flex-direction: column; gap: 4px; padding: 14px; background: var(--card); border: 1px solid var(--line); border-radius: 14px; text-decoration: none; color: var(--ink) }
+.area .ic { font-size: 26px }
+.bar { display: block; height: 7px; background: var(--acc-soft); border-radius: 9px; overflow: hidden; flex: 1 }
+.bar i { display: block; height: 100%; background: var(--acc); border-radius: 9px }
+.tabs { display: flex; gap: 6px; margin-bottom: 12px }
+.tabs a { flex: 1; text-align: center; padding: 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--card); text-decoration: none; color: var(--ink); font-weight: 600 }
+.tabs a.on { background: var(--ink); color: var(--paper); border-color: var(--ink) }
+.gens { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px }
+.gen { display: flex; justify-content: space-between; gap: 10px; padding: 12px 14px; background: var(--card); border: 1px solid var(--line); border-radius: 10px; text-decoration: none; color: var(--ink) }
+.th-title { margin: 4px 0 8px }
+.toc { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 12px 12px 12px 34px; margin: 0 0 14px }
+.toc a { color: var(--ink) }
+.theory h3 { margin: 0 0 8px; color: var(--acc) }
+.theory p, .theory li { margin: 6px 0 }
+.theory ul, .theory ol { padding-left: 20px }
+.eq { margin: 10px 0; padding: 10px 12px; background: var(--acc-soft); border-left: 3px solid var(--acc); border-radius: 6px; font-family: "Cambria Math", Cambria, Georgia, serif; font-size: 17px; overflow-x: auto }
+.tip, .warn, .hint { margin: 10px 0; padding: 10px 12px; border-radius: 8px; font-size: 15px }
+.tip { background: var(--ok-soft); border-left: 3px solid var(--ok) }
+.warn { background: var(--bad-soft); border-left: 3px solid var(--bad) }
+.hint { background: #fff7d6; color: #4a3b00; border-left: 3px solid #e0b100 }
+:root[data-theme=dark] .hint { background: #2b2610; color: #f3e3a0 }
+@media (prefers-color-scheme: dark) { :root:not([data-theme=light]) .hint { background: #2b2610; color: #f3e3a0 } }
+.tbl { width: 100%; border-collapse: collapse; font-size: 14.5px; margin: 8px 0 }
+.tbl th, .tbl td { border-bottom: 1px solid var(--line); padding: 6px 8px; text-align: left; vertical-align: top }
+.tbl.f td:first-child { color: var(--mut); width: 38% }
+.tbl.f td:last-child { font-family: "Cambria Math", Cambria, Georgia, serif }
+.fr { display: inline-flex; flex-direction: column; vertical-align: middle; text-align: center; margin: 0 2px; font-size: .92em }
+.fr > span:first-child { border-bottom: 1px solid currentColor; padding: 0 3px }
+.fr > span:last-child { padding: 0 3px }
+.sq { border-top: 1px solid currentColor; padding: 0 2px }
+/* zadania */
+.b-head { display: flex; align-items: baseline; gap: 8px; margin-bottom: 8px; padding-bottom: 8px; border-bottom: 2px solid var(--ink) }
+.b-num { font-weight: 800; font-family: Georgia, serif }
+.b-title { flex: 1; font-weight: 700 }
+.b-pts { font-size: 13px; color: var(--mut); white-space: nowrap }
+.ctx { margin-bottom: 6px }
+.fig { margin: 8px 0; text-align: center }
+.plot { width: 100%; max-width: 360px; font-size: 11px; fill: var(--mut) }
+.plot .ax { stroke: var(--ink); stroke-width: 1.4; fill: none }
+.plot .ln { stroke: var(--acc); stroke-width: 2.4; fill: none }
+.plot .dash { stroke: var(--mut); stroke-dasharray: 3 3; fill: none }
+.part { border-top: 1px dashed var(--line); padding-top: 12px; margin-top: 12px }
+.q { margin-bottom: 8px }
+.ans-row { display: flex; align-items: center; gap: 8px }
+.ans-row input, textarea { flex: 1; width: 100%; padding: 10px 12px; border: 1.5px solid var(--line); border-radius: 10px; background: var(--paper); color: var(--ink); font: inherit; font-size: 17px }
+.ans-row input:focus, textarea:focus { outline: none; border-color: var(--acc) }
+.unit { font-weight: 600; min-width: 40px }
+.mc { display: flex; flex-direction: column; gap: 6px }
+.opt { text-align: left; padding: 10px 12px; border-radius: 10px; border: 1.5px solid var(--line); background: var(--paper); color: var(--ink); font: inherit; cursor: pointer }
+.opt.sel { border-color: var(--acc); background: var(--acc-soft) }
+.opt.right { border-color: var(--ok); background: var(--ok-soft) }
+.opt.wrong { border-color: var(--bad); background: var(--bad-soft) }
+.tf { display: flex; flex-direction: column; gap: 6px }
+.tf-row { display: flex; gap: 10px; align-items: center; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px }
+.tf-row.right { background: var(--ok-soft) } .tf-row.wrong { background: var(--bad-soft) }
+.tf-s { flex: 1 }
+.pf-wrap { display: flex; gap: 4px }
+.pf, .pt { width: 40px; height: 38px; border-radius: 9px; border: 1.5px solid var(--line); background: var(--paper); color: var(--ink); font: inherit; font-weight: 700; cursor: pointer }
+.pf.sel, .pt.sel { background: var(--ink); color: var(--paper); border-color: var(--ink) }
+.tools { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px }
+.steps { padding-left: 22px; margin: 8px 0 }
+.steps li { margin: 8px 0; padding-left: 4px }
+.result .ok, .result .bad, .result .model { margin-top: 10px; padding: 10px 12px; border-radius: 10px }
+.result .ok { background: var(--ok-soft); color: var(--ok) }
+.result .bad { background: var(--bad-soft); color: var(--bad) }
+.result .model { background: var(--acc-soft) }
+p.bad { color: var(--bad) }
+details { margin-top: 8px; border: 1px solid var(--line); border-radius: 10px; padding: 6px 10px }
+summary { cursor: pointer; font-weight: 600; padding: 4px 0 }
+.rubric ul { padding-left: 18px; font-size: 14.5px }
+.selfgrade { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 10px; font-size: 14.5px }
+.theory-link { margin: 14px 0 0; font-size: 14.5px }
+.timer { position: sticky; top: calc(48px + env(safe-area-inset-top)); z-index: 4; text-align: center; padding: 8px; margin: -4px 0 12px; background: var(--ink); color: var(--paper); border-radius: 10px; font-weight: 700; font-variant-numeric: tabular-nums }
+.timer.late { background: var(--bad); color: #fff }
+.score { text-align: center }
+.score .big { font: 800 36px/1.1 Georgia, serif }
+.score .pct { font-size: 20px; color: var(--acc); font-weight: 700 }
+.byarea { display: flex; flex-direction: column; gap: 8px; text-align: left; margin-top: 12px }
+.byarea > div { display: grid; grid-template-columns: 1.4fr 1fr auto; gap: 10px; align-items: center; font-size: 14px }
+.nuc { font-family: "Cambria Math", Cambria, Georgia, serif; white-space: nowrap }
+@media (max-width: 420px) { body { font-size: 15.5px } .hero, .bundle, .theory { padding: 13px } .eq { font-size: 15.5px } }

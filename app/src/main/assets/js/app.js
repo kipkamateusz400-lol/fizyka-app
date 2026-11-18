@@ -1,0 +1,412 @@
+/* Główna logika aplikacji: widoki, ćwiczenia, arkusz maturalny, postęp */
+'use strict';
+
+const $ = (s, el = document) => el.querySelector(s);
+const h = (tag, attrs = {}, ...kids) => {
+  const el = document.createElement(tag);
+  for (const [k, val] of Object.entries(attrs || {})) {
+    if (k === 'class') el.className = val;
+    else if (k === 'html') el.innerHTML = val;
+    else if (k.startsWith('on')) el.addEventListener(k.slice(2), val);
+    else if (val !== false && val != null) el.setAttribute(k, val);
+  }
+  for (const kid of kids.flat()) if (kid != null && kid !== false) el.append(kid.nodeType ? kid : document.createTextNode(kid));
+  return el;
+};
+const areaOf = id => AREAS.find(a => a.id === id);
+const genById = id => GENS.find(g => g.id === id);
+const isClosed = p => p.kind === 'mc' || p.kind === 'tf';
+
+/* ---------- Pamięć (postęp, przerwany arkusz) ---------- */
+const store = {
+  get(k, def) { try { const s = localStorage.getItem('fiz:' + k); return s ? JSON.parse(s) : def; } catch (e) { return def; } },
+  set(k, val) { try { localStorage.setItem('fiz:' + k, JSON.stringify(val)); } catch (e) { /* brak miejsca */ } }
+};
+function stats() { return store.get('stats', { gen: {}, exams: [] }); }
+function recordPart(genId, got, max, prevGot) {
+  const s = stats();
+  const g = s.gen[genId] || (s.gen[genId] = { got: 0, max: 0, n: 0 });
+  if (prevGot == null) { g.max += max; g.n += 1; g.got += got; } else g.got += got - prevGot;
+  g.last = Date.now();
+  store.set('stats', s);
+}
+function areaStats(areaId) {
+  const s = stats(); let got = 0, max = 0, n = 0;
+  GENS.filter(g => g.area === areaId).forEach(g => { const x = s.gen[g.id]; if (x) { got += x.got; max += x.max; n += x.n; } });
+  return { got, max, n, pct: max ? Math.round(100 * got / max) : null };
+}
+
+/* ---------- Ocena części zadania ---------- */
+function autoScore(p, ans) {
+  if (p.kind === 'mc') return ans === p.correct ? p.pts : 0;
+  if (p.kind === 'tf') {
+    if (!ans) return 0;
+    const ok = p.statements.filter((st, i) => ans[i] === st.v).length, all = p.statements.length;
+    if (ok === all) return p.pts;
+    return p.pts === 2 && ok === all - 1 ? 1 : 0;
+  }
+  if (p.kind === 'num') return closeEnough(parseNum(ans), p.ans, p.tol || 0.03) ? p.pts : 0;
+  return 0;
+}
+
+/* ---------- Render jednej wiązki zadań ---------- */
+function renderBundle(task, opt) {
+  const { mode, num, onScore } = opt; // mode: 'practice' | 'exam' | 'review'
+  const g = genById(task.gen), area = areaOf(g.area);
+  const box = h('article', { class: 'bundle' });
+  box.append(h('header', { class: 'b-head' },
+    h('span', { class: 'b-num' }, num ? `Zadanie ${num}.` : area.icon),
+    h('span', { class: 'b-title' }, g.title),
+    h('span', { class: 'b-pts' }, `${task.parts.reduce((a, p) => a + p.pts, 0)} pkt`)));
+  box.append(h('div', { class: 'ctx', html: task.ctx }));
+  if (task.svg) box.append(h('div', { class: 'fig', html: task.svg }));
+  task.parts.forEach((p, i) => box.append(renderPart(task, p, i, opt, num ? `${num}.${i + 1}` : `${i + 1}`)));
+  if (mode === 'practice') box.append(h('p', { class: 'theory-link' }, h('a', { href: `#/dzial/${g.area}/teoria` }, `📖 Teoria: ${area.name}`)));
+  return box;
+}
+
+function renderPart(task, p, idx, opt, label) {
+  const { mode, onScore } = opt;
+  task.ans = task.ans || [];
+  task.got = task.got || [];
+  const el = h('section', { class: 'part' });
+  el.append(h('div', { class: 'q' }, h('b', {}, `Zadanie ${label}. `), h('span', { class: 'muted' }, `(0–${p.pts}) `), h('span', { html: p.q })));
+  const locked = () => mode === 'review' || el.classList.contains('checked');
+  const save = () => { if (opt.onChange) opt.onChange(); };
+
+  /* pola odpowiedzi */
+  let getAns;
+  if (p.kind === 'num') {
+    const inp = h('input', { type: 'text', inputmode: 'decimal', placeholder: 'wynik', value: task.ans[idx] || '', autocomplete: 'off' });
+    inp.addEventListener('input', () => { task.ans[idx] = inp.value; save(); });
+    el.append(h('div', { class: 'ans-row' }, inp, h('span', { class: 'unit' }, p.unit || '')));
+    if (task.parts.findIndex(x => x.kind === 'num') === idx && mode !== 'review') el.append(h('div', { class: 'small muted' }, 'Wpisz sam wynik liczbowy (np. 0,98 albo 6,7·10^-3 lub 6,7e-3). Obliczenia rób na kartce – jak na maturze.'));
+    getAns = () => inp.value;
+    if (mode === 'review') inp.disabled = true;
+  } else if (p.kind === 'mc') {
+    const list = h('div', { class: 'mc' });
+    p.options.forEach((o, k) => {
+      const b = h('button', { class: 'opt' + (task.ans[idx] === k ? ' sel' : ''), html: `<b>${'ABCD'[k]}.</b> ${o}` });
+      b.onclick = () => { if (locked()) return; task.ans[idx] = k; list.querySelectorAll('.opt').forEach(x => x.classList.remove('sel')); b.classList.add('sel'); save(); };
+      list.append(b);
+    });
+    el.append(list); getAns = () => task.ans[idx];
+  } else if (p.kind === 'tf') {
+    const cur = task.ans[idx] || (task.ans[idx] = []);
+    const tb = h('div', { class: 'tf' });
+    p.statements.forEach((st, k) => {
+      const mk = (val, txt) => { const b = h('button', { class: 'pf' + (cur[k] === val ? ' sel' : '') }, txt); b.onclick = () => { if (locked()) return; cur[k] = val; b.parentNode.querySelectorAll('.pf').forEach(x => x.classList.remove('sel')); b.classList.add('sel'); save(); }; return b; };
+      tb.append(h('div', { class: 'tf-row' }, h('span', { class: 'tf-s', html: `${k + 1}. ${st.s}` }), h('span', { class: 'pf-wrap' }, mk(true, 'P'), mk(false, 'F'))));
+    });
+    el.append(tb); getAns = () => cur;
+  } else {
+    const ta = h('textarea', { rows: 3, placeholder: 'Twoja odpowiedź (możesz też odpowiedzieć na kartce)' }, task.ans[idx] || '');
+    ta.addEventListener('input', () => { task.ans[idx] = ta.value; save(); });
+    if (mode === 'review') ta.disabled = true;
+    el.append(ta); getAns = () => ta.value;
+  }
+
+  /* nauka: wskazówka i kroki */
+  const help = h('div', { class: 'help' });
+  if (mode === 'practice') {
+    const tools = h('div', { class: 'tools' });
+    if (p.hint) tools.append(h('button', { class: 'ghost', onclick: e => { help.querySelector('.hint')?.remove(); help.prepend(h('div', { class: 'hint', html: '💡 ' + p.hint })); e.target.disabled = true; } }, '💡 Wskazówka'));
+    if (p.steps && p.steps.length > 1) {
+      let shown = 0;
+      const stepsBox = h('ol', { class: 'steps' });
+      const btn = h('button', { class: 'ghost' }, `👣 Krok po kroku (0/${p.steps.length})`);
+      btn.onclick = () => { if (shown >= p.steps.length) return; stepsBox.append(h('li', { html: p.steps[shown++] })); if (!stepsBox.parentNode) help.append(stepsBox); btn.textContent = `👣 Następny krok (${shown}/${p.steps.length})`; if (shown === p.steps.length) btn.disabled = true; };
+      tools.append(btn);
+    }
+    tools.append(h('button', { class: 'primary', onclick: () => check() }, p.kind === 'open' ? 'Pokaż odpowiedź wzorcową' : 'Sprawdź'));
+    el.append(tools);
+  }
+  el.append(help);
+
+  const result = h('div', { class: 'result' });
+  el.append(result);
+
+  function check() {
+    if (el.classList.contains('checked') && mode === 'practice') return;
+    el.classList.add('checked');
+    const ans = getAns();
+    const auto = autoScore(p, ans);
+    result.innerHTML = '';
+    if (p.kind === 'num') {
+      const u = parseNum(ans), ok = auto === p.pts;
+      result.append(h('div', { class: ok ? 'ok' : 'bad', html: ok ? `✔ Dobrze! Poprawny wynik: <b>${fmt(p.ans)} ${p.unit}</b>` : (isFinite(u) ? `✘ Twój wynik ${fmt(u)} ${p.unit}, poprawny: <b>${fmt(p.ans)} ${p.unit}</b>` : `Poprawny wynik: <b>${fmt(p.ans)} ${p.unit}</b>`) }));
+    } else if (p.kind === 'mc') {
+      result.append(h('div', { class: auto ? 'ok' : 'bad', html: (auto ? '✔ Dobrze! ' : '✘ ') + `Poprawna odpowiedź: <b>${'ABCD'[p.correct]}</b>` }));
+      el.querySelectorAll('.opt').forEach((b, k) => { if (k === p.correct) b.classList.add('right'); else if (k === ans) b.classList.add('wrong'); });
+    } else if (p.kind === 'tf') {
+      result.append(h('div', { class: auto === p.pts ? 'ok' : 'bad', html: `Poprawnie: ${p.statements.map((st, k) => `${k + 1}–${st.v ? 'P' : 'F'}`).join(', ')}` }));
+      el.querySelectorAll('.tf-row').forEach((row, k) => row.classList.add(ans[k] === p.statements[k].v ? 'right' : 'wrong'));
+    } else {
+      result.append(h('div', { class: 'model', html: '<b>Przykładowa poprawna odpowiedź:</b> ' + p.model }));
+    }
+    if (p.steps && p.steps.length) {
+      const old = help.querySelector('.steps'); if (old) old.remove();
+      result.append(h('details', { class: 'solution', open: mode === 'practice' && p.kind !== 'mc' && p.kind !== 'tf' ? '' : null }, h('summary', {}, 'Pełne rozwiązanie'), h('ol', { class: 'steps' }, p.steps.map(s => h('li', { html: s })))));
+    }
+    if (p.kind === 'num' || p.kind === 'open') {
+      if (p.rubric) result.append(h('details', { class: 'rubric' }, h('summary', {}, 'Zasady oceniania (klucz)'), h('ul', {}, p.rubric.map(r => h('li', {}, r)))));
+      const pick = h('div', { class: 'selfgrade' }, h('span', {}, p.kind === 'num' && auto ? 'Wynik się zgadza. Masz też pełny zapis obliczeń? Punkty: ' : 'Oceń się według klucza: '));
+      let cur = mode === 'review' && task.got[idx] != null ? task.got[idx] : auto, prev = null;
+      for (let k = 0; k <= p.pts; k++) {
+        const b = h('button', { class: 'pt' + (k === cur ? ' sel' : '') }, String(k));
+        b.onclick = () => { cur = k; pick.querySelectorAll('.pt').forEach(x => x.classList.remove('sel')); b.classList.add('sel'); task.got[idx] = k; if (onScore) { onScore(task, idx, k, prev); prev = k; } };
+        pick.append(b);
+      }
+      result.append(pick);
+      task.got[idx] = cur; if (onScore) { onScore(task, idx, cur, null); prev = cur; }
+    } else {
+      task.got[idx] = auto; if (onScore) onScore(task, idx, auto, null);
+    }
+    if (mode === 'practice') result.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+  el.check = check;
+  if (mode === 'review') check();
+  return el;
+}
+
+/* ---------- Budowanie arkusza ---------- */
+function buildExam(target = 60, minutes = 180, areas = null) {
+  const pool = GENS.filter(g => !areas || areas.includes(g.area));
+  const closedRange = target === 60 ? [8, 15] : [Math.round(target * 0.13), Math.round(target * 0.3)];
+  for (let attempt = 0; attempt < 3000; attempt++) {
+    const order = [];
+    const areaList = areas || AREAS.map(a => a.id);
+    if (target >= 40) areaList.forEach(a => order.push(R.pick(pool.filter(g => g.area === a))));
+    R.shuffle(pool).forEach(g => { if (!order.includes(g)) order.push(g); });
+    const tasks = []; let total = 0;
+    for (const g of order) {
+      if (total >= target) break;
+      const t = g.gen();
+      let parts = t.parts;
+      // w arkuszu krótkie (1-pkt) polecenia otwarte pojawiają się rzadziej – część z nich pomijamy
+      const trimmed = parts.filter(p => !(p.pts === 1 && !isClosed(p) && Math.random() < 0.6));
+      if (trimmed.length) parts = trimmed;
+      if (parts.length > 3) parts = R.shuffle(parts.map((p, i) => i)).slice(0, 3).sort((a, b) => a - b).map(i => parts[i]);
+      const rem = target - total;
+      let sum = parts.reduce((a, p) => a + p.pts, 0);
+      if (sum > rem) {
+        let best = null;
+        for (let mask = 1; mask < 1 << parts.length; mask++) {
+          const sub = parts.filter((_, i) => mask & (1 << i)), s2 = sub.reduce((a, p) => a + p.pts, 0);
+          if (s2 === rem) { best = sub; break; }
+        }
+        if (!best) continue;
+        parts = best; sum = rem;
+      }
+      tasks.push({ gen: g.id, ctx: t.ctx, svg: t.svg, parts });
+      total += sum;
+    }
+    if (total !== target) continue;
+    const closed = tasks.reduce((a, t) => a + t.parts.filter(isClosed).reduce((b, p) => b + p.pts, 0), 0);
+    const nParts = tasks.reduce((a, t) => a + t.parts.length, 0);
+    if (closed < closedRange[0] || closed > closedRange[1]) continue;
+    if (target === 60 && (nParts < 23 || nParts > 35)) continue;
+    // kolejność jak w arkuszu: według działów
+    const ord = AREAS.map(a => a.id);
+    tasks.sort((a, b) => ord.indexOf(genById(a.gen).area) - ord.indexOf(genById(b.gen).area));
+    return { id: Date.now(), target, minutes, start: Date.now(), tasks, done: false };
+  }
+  throw new Error('Nie udało się zbudować arkusza');
+}
+
+/* ---------- Widoki ---------- */
+const main = () => $('#main');
+let timerId = null;
+function setTitle(t, back) {
+  $('#title').textContent = t;
+  $('#back').hidden = !back;
+  if (back) $('#back').onclick = () => (typeof back === 'string' ? (location.hash = back) : history.back());
+}
+function nav(active) { document.querySelectorAll('#nav a').forEach(a => a.classList.toggle('on', a.dataset.v === active)); }
+
+function viewHome() {
+  setTitle('Fizyka · matura rozszerzona'); nav('home');
+  const m = main(); m.innerHTML = '';
+  const ex = store.get('exam', null);
+  m.append(h('section', { class: 'hero' },
+    h('h2', {}, 'Ucz się, ćwicz, pisz próbne matury'),
+    h('p', { class: 'muted' }, `${GENS.length} typów zadań w 6 działach informatora CKE 2025. Liczby losują się za każdym razem, więc zadania się nie kończą.`),
+    h('div', { class: 'cta' },
+      ex && !ex.done ? h('a', { class: 'btn primary', href: '#/matura' }, `▶ Wróć do arkusza (${ex.target} pkt)`) : h('a', { class: 'btn primary', href: '#/matura/nowa/60' }, '📝 Pełna matura: 60 pkt, 180 min'),
+      h('a', { class: 'btn', href: '#/matura/nowa/20' }, '⏱ Mini-arkusz: 20 pkt, 60 min'),
+      h('a', { class: 'btn', href: '#/losuj' }, '🎲 Losowe zadanie'),
+      h('a', { class: 'btn', href: '#/dzial/howto/teoria' }, '🧭 Jak rozwiązywać zadania'))));
+  m.append(h('h3', { class: 'sec' }, 'Działy'));
+  const grid = h('div', { class: 'areas' });
+  AREAS.forEach(a => {
+    const s = areaStats(a.id);
+    grid.append(h('a', { class: 'area', href: `#/dzial/${a.id}` },
+      h('span', { class: 'ic' }, a.icon), h('b', {}, a.name),
+      h('span', { class: 'small muted' }, `${GENS.filter(g => g.area === a.id).length} typów zadań · ${s.n} rozwiązanych`),
+      h('span', { class: 'bar' }, h('i', { style: `width:${s.pct || 0}%` })),
+      h('span', { class: 'small' }, s.pct == null ? 'jeszcze nie ćwiczone' : `skuteczność ${s.pct}%`)));
+  });
+  m.append(grid);
+}
+
+function viewArea(id, tab) {
+  if (id === 'howto') return viewTheory('howto');
+  const a = areaOf(id); if (!a) return viewHome();
+  setTitle(a.name, '#/'); nav('home');
+  const m = main(); m.innerHTML = '';
+  m.append(h('div', { class: 'tabs' }, h('a', { class: tab !== 'zadania' ? 'on' : '', href: `#/dzial/${id}/teoria` }, '📖 Teoria'), h('a', { class: tab === 'zadania' ? 'on' : '', href: `#/dzial/${id}/zadania` }, '✏️ Zadania')));
+  if (tab === 'zadania') {
+    m.append(h('a', { class: 'btn primary wide', href: `#/losuj/${id}` }, '🎲 Losuj zadanie z tego działu'));
+    const s = stats();
+    const list = h('div', { class: 'gens' });
+    GENS.filter(g => g.area === id).forEach(g => {
+      const x = s.gen[g.id];
+      list.append(h('a', { class: 'gen', href: `#/zadanie/${g.id}` }, h('span', {}, g.title), h('span', { class: 'small muted' }, x ? `${x.got}/${x.max} pkt` : 'nowe')));
+    });
+    m.append(list);
+  } else viewTheory(id, m);
+}
+
+function viewTheory(id, container) {
+  const T = THEORY[id];
+  const m = container || main();
+  if (!container) { setTitle(T.title, '#/'); nav('home'); m.innerHTML = ''; }
+  m.append(h('h2', { class: 'th-title' }, T.title));
+  const toc = h('ol', { class: 'toc' });
+  T.sections.forEach((s, i) => toc.append(h('li', {}, h('a', { href: 'javascript:void 0', onclick: () => document.getElementById('s' + i).scrollIntoView({ behavior: 'smooth' }) }, s.t))));
+  m.append(toc);
+  T.sections.forEach((s, i) => m.append(h('section', { class: 'theory', id: 's' + i }, h('h3', {}, `${i + 1}. ${s.t}`), h('div', { html: s.b }))));
+  if (id !== 'howto') m.append(h('a', { class: 'btn primary wide', href: `#/losuj/${id}` }, '✏️ Przećwicz ten dział'));
+  else m.append(h('a', { class: 'btn primary wide', href: '#/losuj' }, '🎲 Spróbuj na losowym zadaniu'));
+}
+
+function viewPractice(genId, areaId) {
+  let g = genId ? genById(genId) : null;
+  if (!g) { const pool = GENS.filter(x => !areaId || x.area === areaId); g = R.pick(pool); }
+  const a = areaOf(g.area);
+  setTitle(a.name, areaId || genId ? `#/dzial/${g.area}/zadania` : '#/'); nav('practice');
+  const m = main(); m.innerHTML = '';
+  const t = g.gen(); const task = { gen: g.id, ctx: t.ctx, svg: t.svg, parts: t.parts };
+  m.append(h('p', { class: 'small muted' }, 'Najpierw spróbuj sam. Utknąłeś? Użyj wskazówki albo odsłaniaj rozwiązanie krok po kroku.'));
+  m.append(renderBundle(task, { mode: 'practice', onScore: (tk, i, got, prev) => recordPart(g.id, got, tk.parts[i].pts, prev) }));
+  m.append(h('div', { class: 'cta' },
+    h('button', { class: 'btn primary', onclick: () => viewPractice(genId, areaId) }, genId ? '🔄 Nowe liczby, ten sam typ' : '🔄 Kolejne losowe zadanie'),
+    genId ? h('a', { class: 'btn', href: `#/losuj/${g.area}` }, '🎲 Inne zadanie z działu') : null,
+    h('a', { class: 'btn', href: '#/losuj' }, '🎲 Z dowolnego działu')));
+  window.scrollTo(0, 0);
+}
+
+function viewExamStart(target) {
+  setTitle('Arkusz maturalny', '#/'); nav('exam');
+  const m = main(); m.innerHTML = '';
+  const cur = store.get('exam', null);
+  const go = () => {
+    const ex = buildExam(target, target === 60 ? 180 : 60);
+    store.set('exam', ex); location.hash = '#/matura';
+  };
+  m.append(h('section', { class: 'hero' },
+    h('h2', {}, target === 60 ? 'Pełny arkusz – poziom rozszerzony' : 'Mini-arkusz'),
+    h('ul', {},
+      h('li', {}, `${target} punktów, czas ${target === 60 ? '180' : '60'} minut (zegar odlicza w tle, możesz wyjść z aplikacji).`),
+      h('li', {}, 'Zadania ze wszystkich 6 działów, ok. 20% punktów to zadania zamknięte – jak w informatorze CKE.'),
+      h('li', {}, 'Przygotuj kartkę, kalkulator i kartę wzorów (zakładka „Wzory”).'),
+      h('li', {}, 'Po zakończeniu zamknięte sprawdzą się same, a otwarte ocenisz według klucza.')),
+    cur && !cur.done ? h('p', { class: 'warn' }, 'Masz niedokończony arkusz – rozpoczęcie nowego go usunie.') : null,
+    h('div', { class: 'cta' }, h('button', { class: 'btn primary', onclick: go }, '▶ Start'), cur && !cur.done ? h('a', { class: 'btn', href: '#/matura' }, 'Wróć do niedokończonego') : null)));
+}
+
+function viewExam() {
+  const ex = store.get('exam', null);
+  if (!ex) return viewExamStart(60);
+  setTitle(ex.done ? 'Wynik arkusza' : `Arkusz ${ex.target} pkt`, '#/'); nav('exam');
+  const m = main(); m.innerHTML = '';
+  const persist = () => store.set('exam', ex);
+  if (!ex.done) {
+    const tm = h('div', { class: 'timer' });
+    m.append(tm);
+    const tick = () => {
+      const left = ex.start + ex.minutes * 60000 - Date.now();
+      if (left <= 0) { tm.textContent = '⏰ Czas minął! Zakończ arkusz.'; tm.classList.add('late'); return; }
+      const mm = Math.floor(left / 60000), ss = Math.floor(left / 1000) % 60;
+      tm.textContent = `⏱ Pozostało ${Math.floor(mm / 60)}:${String(mm % 60).padStart(2, '0')}:${String(ss).padStart(2, '0')}`;
+    };
+    tick(); clearInterval(timerId); timerId = setInterval(tick, 1000);
+    ex.tasks.forEach((t, i) => m.append(renderBundle(t, { mode: 'exam', num: i + 1, onChange: persist })));
+    m.append(h('button', { class: 'btn primary wide', onclick: () => { if (!confirmFinish()) return; ex.done = true; ex.end = Date.now(); persist(); clearInterval(timerId); viewExam(); window.scrollTo(0, 0); } }, '✔ Zakończ i sprawdź'));
+    return;
+  }
+  clearInterval(timerId);
+  const sumBox = h('section', { class: 'score' });
+  m.append(sumBox);
+  const update = () => {
+    const got = ex.tasks.reduce((a, t) => a + (t.got || []).reduce((b, x) => b + (x || 0), 0), 0);
+    const pct = Math.round(100 * got / ex.target);
+    const byArea = {};
+    ex.tasks.forEach(t => { const ar = genById(t.gen).area; const o = byArea[ar] || (byArea[ar] = [0, 0]); t.parts.forEach((p, i) => { o[0] += (t.got || [])[i] || 0; o[1] += p.pts; }); });
+    sumBox.innerHTML = '';
+    sumBox.append(h('div', { class: 'big' }, `${got} / ${ex.target} pkt`), h('div', { class: 'pct' }, `${pct}%`),
+      h('p', { class: 'small muted' }, `Czas pisania: ${Math.round(((ex.end || Date.now()) - ex.start) / 60000)} min. Punkty za zadania otwarte możesz poprawić niżej – przeczytaj klucz i oceń się uczciwie.`),
+      h('div', { class: 'byarea' }, Object.entries(byArea).map(([ar, [g, mx]]) => h('div', {}, h('span', {}, areaOf(ar).name), h('span', { class: 'bar' }, h('i', { style: `width:${mx ? 100 * g / mx : 0}%` })), h('b', {}, `${g}/${mx}`)))));
+    ex.score = got; persist();
+  };
+  let ready = false;
+  ex.tasks.forEach((t, i) => { t.got = t.got || []; m.append(renderBundle(t, { mode: 'review', num: i + 1, onScore: (tk, idx, got) => { tk.got[idx] = got; if (ready) update(); } })); });
+  ready = true; update();
+  if (!ex.saved) {
+    const s = stats(); s.exams.push({ id: ex.id, date: ex.start, target: ex.target, score: ex.score }); store.set('stats', s); ex.saved = true; persist();
+  }
+  const saveScore = () => { const s = stats(); const e = s.exams.find(x => x.id === ex.id); if (e) e.score = ex.score; store.set('stats', s); };
+  m.append(h('div', { class: 'cta' }, h('button', { class: 'btn primary', onclick: () => { saveScore(); location.hash = '#/matura/nowa/' + ex.target; } }, '📝 Nowy arkusz'), h('button', { class: 'btn', onclick: () => { saveScore(); location.hash = '#/postep'; } }, '📊 Zapisz i zobacz postęp')));
+}
+function confirmFinish() { return window.confirm('Zakończyć arkusz i przejść do sprawdzania?'); }
+
+function viewFormulas() {
+  setTitle('Wzory i stałe'); nav('wzory');
+  const m = main(); m.innerHTML = '';
+  m.append(h('p', { class: 'small muted' }, 'Najważniejsze wzory z karty CKE „Wybrane wzory i stałe fizykochemiczne” (2024/2025). Na egzaminie dostaniesz pełną kartę.'));
+  AREAS.forEach(a => m.append(h('section', { class: 'theory' }, h('h3', {}, `${a.icon} ${a.name}`), h('table', { class: 'tbl f' }, FORMULAS[a.id].map(([n, f]) => h('tr', {}, h('td', {}, n), h('td', { html: f })))))));
+  m.append(h('section', { class: 'theory' }, h('h3', {}, 'Stałe fizyczne'), h('table', { class: 'tbl f' }, CONSTANTS.map(([n, f]) => h('tr', {}, h('td', {}, n), h('td', { html: f }))))));
+}
+
+function viewProgress() {
+  setTitle('Postęp'); nav('postep');
+  const m = main(); m.innerHTML = '';
+  const s = stats();
+  m.append(h('h3', { class: 'sec' }, 'Skuteczność w działach'));
+  const weak = [];
+  m.append(h('div', { class: 'byarea' }, AREAS.map(a => { const x = areaStats(a.id); if (x.pct != null && x.pct < 60) weak.push(a); return h('div', {}, h('span', {}, a.name), h('span', { class: 'bar' }, h('i', { style: `width:${x.pct || 0}%` })), h('b', {}, x.pct == null ? '–' : x.pct + '%')); })));
+  if (weak.length) m.append(h('p', { class: 'warn' }, 'Do powtórki: ', weak.map(a => h('a', { href: `#/dzial/${a.id}/teoria` }, a.name)).reduce((acc, el, i) => (i ? acc.concat([', ', el]) : [el]), [])));
+  m.append(h('h3', { class: 'sec' }, 'Próbne arkusze'));
+  if (!s.exams.length) m.append(h('p', { class: 'muted' }, 'Nie napisałeś jeszcze żadnego arkusza.'));
+  else m.append(h('table', { class: 'tbl' }, h('tr', {}, h('th', {}, 'data'), h('th', {}, 'wynik'), h('th', {}, '%')), s.exams.slice().reverse().map(e => h('tr', {}, h('td', {}, new Date(e.date).toLocaleDateString('pl-PL')), h('td', {}, `${e.score ?? '?'} / ${e.target}`), h('td', {}, e.score != null ? Math.round(100 * e.score / e.target) + '%' : '')))));
+  m.append(h('h3', { class: 'sec' }, 'Najsłabsze typy zadań'));
+  const rows = Object.entries(s.gen).filter(([id, x]) => genById(id) && x.max).map(([id, x]) => [genById(id), x.got / x.max, x]).sort((a, b) => a[1] - b[1]).slice(0, 6);
+  if (!rows.length) m.append(h('p', { class: 'muted' }, 'Rozwiąż kilka zadań, a pokażę, co ćwiczyć.'));
+  else m.append(h('div', { class: 'gens' }, rows.map(([g, r, x]) => h('a', { class: 'gen', href: `#/zadanie/${g.id}` }, h('span', {}, g.title), h('span', { class: 'small muted' }, `${Math.round(r * 100)}% (${x.got}/${x.max})`)))));
+  m.append(h('button', { class: 'btn ghost', onclick: () => { if (confirm('Wyzerować cały postęp?')) { store.set('stats', { gen: {}, exams: [] }); viewProgress(); } } }, 'Wyzeruj postęp'));
+}
+
+/* ---------- Router ---------- */
+function route() {
+  clearInterval(timerId);
+  const parts = location.hash.replace(/^#\/?/, '').split('/').filter(Boolean);
+  const [a, b, c] = parts;
+  try {
+    if (!a) viewHome();
+    else if (a === 'dzial') viewArea(b, c);
+    else if (a === 'losuj') viewPractice(null, b);
+    else if (a === 'zadanie') viewPractice(b);
+    else if (a === 'matura' && b === 'nowa') viewExamStart(+c || 60);
+    else if (a === 'matura') viewExam();
+    else if (a === 'wzory') viewFormulas();
+    else if (a === 'postep') viewProgress();
+    else viewHome();
+  } catch (e) { main().innerHTML = `<p class="bad">Błąd: ${e.message}</p>`; console.error(e); }
+  if (a !== 'dzial' || c !== 'teoria') window.scrollTo(0, 0);
+}
+window.addEventListener('hashchange', route);
+document.addEventListener('DOMContentLoaded', () => {
+  const th = store.get('theme', null); if (th) document.documentElement.dataset.theme = th;
+  $('#theme').onclick = () => { const cur = document.documentElement.dataset.theme === 'dark' || (!document.documentElement.dataset.theme && matchMedia('(prefers-color-scheme: dark)').matches); const nx = cur ? 'light' : 'dark'; document.documentElement.dataset.theme = nx; store.set('theme', nx); };
+  route();
+});
