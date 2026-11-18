@@ -3,7 +3,7 @@ const fs = require('fs'), path = require('path'), vm = require('vm');
 const dir = path.join(__dirname, '../app/src/main/assets/js');
 const ctx = { console, Math, Date, window: { addEventListener() {} }, document: { addEventListener() {} }, location: {} };
 vm.createContext(ctx);
-for (const f of ['util.js', 'gen-mech.js', 'gen-grav.js', 'gen-wave.js', 'gen-elec.js', 'gen-thermo.js', 'gen-atom.js', 'theory.js', 'wzory.js', 'app.js'])
+for (const f of ['util.js', 'gen-mech.js', 'gen-grav.js', 'gen-wave.js', 'gen-elec.js', 'gen-thermo.js', 'gen-atom.js', 'gen-mech2.js', 'gen-grav2.js', 'gen-wave2.js', 'gen-elec2.js', 'gen-thermo2.js', 'gen-atom2.js', 'gen-extra.js', 'theory.js', 'wzory.js', 'app.js'])
   vm.runInContext(fs.readFileSync(path.join(dir, f), 'utf8').replace(/^const (\w+)/gm, 'var $1'), ctx, { filename: f });
 let bad = 0; const t0 = Date.now();
 for (let i = 0; i < 100; i++) {

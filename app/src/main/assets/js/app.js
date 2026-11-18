@@ -129,6 +129,7 @@ function renderPart(task, p, idx, opt, label) {
   function check() {
     if (el.classList.contains('checked') && mode === 'practice') return;
     el.classList.add('checked');
+    el.querySelectorAll('.tools button').forEach(b => { b.disabled = true; });
     const ans = getAns();
     const auto = autoScore(p, ans);
     result.innerHTML = '';

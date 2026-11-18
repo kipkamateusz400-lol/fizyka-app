@@ -3,7 +3,7 @@ const fs = require('fs'), path = require('path'), vm = require('vm');
 const dir = path.join(__dirname, '../app/src/main/assets/js');
 const ctx = { console, Math, module: undefined };
 vm.createContext(ctx);
-for (const f of ['util.js', 'gen-mech.js', 'gen-grav.js', 'gen-wave.js', 'gen-elec.js', 'gen-thermo.js', 'gen-atom.js'])
+for (const f of ['util.js', 'gen-mech.js', 'gen-grav.js', 'gen-wave.js', 'gen-elec.js', 'gen-thermo.js', 'gen-atom.js', 'gen-mech2.js', 'gen-grav2.js', 'gen-wave2.js', 'gen-elec2.js', 'gen-thermo2.js', 'gen-atom2.js', 'gen-extra.js'])
   vm.runInContext(fs.readFileSync(path.join(dir, f), 'utf8').replace(/^'use strict';/m, '').replace(/^const (\w+)/gm, 'var $1'), ctx, { filename: f });
 const { GENS, AREAS, parseNum, closeEnough } = ctx;
 let errors = 0;
@@ -16,8 +16,10 @@ for (const g of GENS) {
     if (!t.parts?.length) err(g, 'brak części');
     for (const p of t.parts) {
       if (!(p.pts >= 1 && p.pts <= 4)) err(g, 'pkt ' + p.pts);
-      if (p.kind === 'num') { if (!isFinite(p.ans)) err(g, 'ans ' + p.ans); if (p.ans <= 0 && p.ans !== 0) err(g, 'ujemna odp ' + p.ans + ' ' + p.q); }
+      if (p.kind === 'num') { if (!isFinite(p.ans)) err(g, 'ans ' + p.ans); if (p.ans <= 0 && p.ans !== 0 && !p.neg) err(g, 'ujemna odp ' + p.ans + ' ' + p.q); }
       if (p.kind === 'mc' && !(p.correct >= 0 && p.correct < p.options.length)) err(g, 'mc correct');
+      if (p.kind === 'mc' && (p.options.length < 2 || new Set(p.options).size !== p.options.length)) err(g, 'mc opcje: ' + p.options.join(' | '));
+      if ((p.kind === 'num' || p.kind === 'open') && (!p.steps && !p.model)) err(g, 'brak rozwiązania');
       if (p.kind === 'tf' && !(p.statements.length >= 2)) err(g, 'tf');
       if (p.kind === 'open' && !p.model) err(g, 'open model');
     }
