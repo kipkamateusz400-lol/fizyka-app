@@ -1,23 +1,57 @@
 /* Motyw: kartka papieru milimetrowego z pracowni fizycznej – granatowy atrament, pomarańczowa siatka */
 :root {
-  color-scheme: light dark;
-  --paper: light-dark(#fbf7ef, #12161f);
-  --grid: light-dark(#f3e1cc, #1b2130);
-  --grid2: light-dark(#ecc9a4, #232b3d);
-  --ink: light-dark(#1b2a4a, #e3e8f2);
-  --mut: light-dark(#5d6680, #98a2b8);
-  --acc: light-dark(#d9480f, #ff8a4c);
-  --acc-soft: light-dark(#fff0e4, #2a1f18);
-  --card: light-dark(#ffffff, #191f2b);
-  --line: light-dark(#e6d6c3, #2b3446);
-  --ok: light-dark(#1e7b45, #5fd394);
-  --ok-soft: light-dark(#e6f5ec, #13281d);
-  --bad: light-dark(#c42d3c, #ff7b88);
-  --bad-soft: light-dark(#fdebed, #2c1519);
-  --top: light-dark(#1b2a4a, #0c1018);
+  color-scheme: light;
+  --paper: #fbf7ef;
+  --grid: #f3e1cc;
+  --grid2: #ecc9a4;
+  --ink: #1b2a4a;
+  --mut: #5d6680;
+  --acc: #d9480f;
+  --acc-soft: #fff0e4;
+  --card: #ffffff;
+  --line: #e6d6c3;
+  --ok: #1e7b45;
+  --ok-soft: #e6f5ec;
+  --bad: #c42d3c;
+  --bad-soft: #fdebed;
+  --top: #1b2a4a;
 }
-:root[data-theme=light] { color-scheme: light }
-:root[data-theme=dark] { color-scheme: dark }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme=light]) {
+    color-scheme: dark;
+    --paper: #12161f;
+    --grid: #1b2130;
+    --grid2: #232b3d;
+    --ink: #e3e8f2;
+    --mut: #98a2b8;
+    --acc: #ff8a4c;
+    --acc-soft: #2a1f18;
+    --card: #191f2b;
+    --line: #2b3446;
+    --ok: #5fd394;
+    --ok-soft: #13281d;
+    --bad: #ff7b88;
+    --bad-soft: #2c1519;
+    --top: #0c1018;
+  }
+}
+:root[data-theme=dark] {
+  color-scheme: dark;
+  --paper: #12161f;
+  --grid: #1b2130;
+  --grid2: #232b3d;
+  --ink: #e3e8f2;
+  --mut: #98a2b8;
+  --acc: #ff8a4c;
+  --acc-soft: #2a1f18;
+  --card: #191f2b;
+  --line: #2b3446;
+  --ok: #5fd394;
+  --ok-soft: #13281d;
+  --bad: #ff7b88;
+  --bad-soft: #2c1519;
+  --top: #0c1018;
+}
 * { box-sizing: border-box; min-width: 0 }
 html { -webkit-text-size-adjust: 100% }
 body {
@@ -70,9 +104,10 @@ button:disabled { opacity: .5 }
 .tip, .warn, .hint { margin: 10px 0; padding: 10px 12px; border-radius: 8px; font-size: 15px }
 .tip { background: var(--ok-soft); border-left: 3px solid var(--ok) }
 .warn { background: var(--bad-soft); border-left: 3px solid var(--bad) }
-.hint { background: #fff7d6; color: #4a3b00; border-left: 3px solid #e0b100 }
-:root[data-theme=dark] .hint { background: #2b2610; color: #f3e3a0 }
-@media (prefers-color-scheme: dark) { :root:not([data-theme=light]) .hint { background: #2b2610; color: #f3e3a0 } }
+.hint { background: var(--hint-bg); color: var(--hint-fg); border-left: 3px solid #e0b100 }
+:root { --hint-bg: #fff7d6; --hint-fg: #4a3b00 }
+:root[data-theme=dark] { --hint-bg: #2b2610; --hint-fg: #f3e3a0 }
+@media (prefers-color-scheme: dark) { :root:not([data-theme=light]) { --hint-bg: #2b2610; --hint-fg: #f3e3a0 } }
 .tbl { width: 100%; border-collapse: collapse; font-size: 14.5px; margin: 8px 0 }
 .tbl th, .tbl td { border-bottom: 1px solid var(--line); padding: 6px 8px; text-align: left; vertical-align: top }
 .tbl.f td:first-child { color: var(--mut); width: 38% }
@@ -132,3 +167,27 @@ summary { cursor: pointer; font-weight: 600; padding: 4px 0 }
 .byarea > div { display: grid; grid-template-columns: 1.4fr 1fr auto; gap: 10px; align-items: center; font-size: 14px }
 .nuc { font-family: "Cambria Math", Cambria, Georgia, serif; white-space: nowrap }
 @media (max-width: 420px) { body { font-size: 15.5px } .hero, .bundle, .theory { padding: 13px } .eq { font-size: 15.5px } }
+/* dobieranie, uzupełnianie, poziomy klucza */
+.m-opts { display: flex; flex-direction: column; gap: 4px; margin: 6px 0 10px; padding: 10px 12px; background: var(--acc-soft); border-radius: 10px; font-size: 15px }
+.m-sel { min-width: 64px; height: 38px; border-radius: 9px; border: 1.5px solid var(--line); background: var(--paper); color: var(--ink); font: inherit; font-weight: 700; padding: 0 6px }
+.fill { line-height: 2.3 }
+.gap { display: inline-flex; flex-wrap: wrap; gap: 4px; margin: 0 4px; vertical-align: middle }
+.gapo { padding: 3px 9px; border-radius: 8px; border: 1.5px solid var(--line); background: var(--paper); color: var(--ink); font: inherit; font-size: 15px; cursor: pointer; line-height: 1.4 }
+.gapo.sel { background: var(--ink); color: var(--paper); border-color: var(--ink) }
+.gapo.right { background: var(--ok-soft); border-color: var(--ok); color: var(--ok) }
+.gapo.wrong { background: var(--bad-soft); border-color: var(--bad); color: var(--bad) }
+.levels { display: flex; flex-direction: column; gap: 6px; margin-top: 6px }
+.lvl { display: flex; gap: 10px; align-items: baseline; text-align: left; padding: 9px 12px; border-radius: 10px; border: 1.5px solid var(--line); background: var(--paper); color: var(--ink); font: inherit; font-size: 14.5px; cursor: pointer }
+.lvl b { white-space: nowrap; min-width: 44px }
+.lvl.sel { border-color: var(--acc); background: var(--acc-soft) }
+.plot .gr { stroke: var(--line); stroke-width: .8; fill: none }
+.plot .dsh { stroke-dasharray: 5 4 }
+.plot .alt { stroke: var(--ink) }
+.plot .dot { fill: var(--ink) }
+.plot .lab { fill: var(--ink); font-weight: 700; font-size: 12px }
+.plot .axl { fill: var(--ink); font-size: 11.5px; font-weight: 600 }
+.plot text { font-size: 10.5px }
+.fig .plot { max-width: 420px }
+.src { margin: 4px 0 10px; padding: 12px 14px; border: 1px solid var(--line); border-left: 4px solid var(--ink); border-radius: 10px; background: var(--paper); font-family: Georgia, "Times New Roman", serif; font-size: 15.5px }
+.src p { margin: 6px 0 }
+.src-h { font-family: system-ui, sans-serif; font-weight: 700; font-size: 13px; color: var(--mut); text-transform: uppercase; letter-spacing: .4px }

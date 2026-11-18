@@ -15,7 +15,20 @@ const h = (tag, attrs = {}, ...kids) => {
 };
 const areaOf = id => AREAS.find(a => a.id === id);
 const genById = id => GENS.find(g => g.id === id);
-const isClosed = p => p.kind === 'mc' || p.kind === 'tf';
+const isClosed = p => ['mc', 'tf', 'match', 'fill'].includes(p.kind);
+/* zadania zamknięte wielopunktowe: komplet = max, jeden błąd = 1 pkt (gdy max 2) */
+const partial = (ok, all, pts) => ok === all ? pts : (pts === 2 && ok === all - 1 ? 1 : 0);
+
+function rubricLevels(p) {
+  let lv = (p.rubric || []).map(r => { const m = String(r).match(/^\s*(\d)\s*pkt\s*[–-]\s*(.*)$/); return m ? { pts: +m[1], txt: m[2] } : null; }).filter(Boolean);
+  if (!lv.length) {
+    lv = [{ pts: p.pts, txt: p.kind === 'open' ? 'odpowiedź zawiera wszystkie istotne elementy odpowiedzi wzorcowej (prawo/zależność + wniosek)' : 'poprawna metoda i wynik z jednostką' }];
+    if (p.pts > 1) lv.push({ pts: 1, txt: p.kind === 'open' ? 'odpowiedź częściowo poprawna lub niepełna (brak powołania się na prawo albo niepełny wniosek)' : 'poprawna metoda, błąd w obliczeniach' });
+    lv.push({ pts: 0, txt: 'odpowiedź niepoprawna albo brak odpowiedzi' });
+  }
+  if (!lv.some(l => l.pts === 0)) lv.push({ pts: 0, txt: 'brak istotnego postępu albo brak rozwiązania' });
+  return lv.sort((a, b) => b.pts - a.pts);
+}
 
 /* ---------- Pamięć (postęp, przerwany arkusz) ---------- */
 const store = {
@@ -41,9 +54,11 @@ function autoScore(p, ans) {
   if (p.kind === 'mc') return ans === p.correct ? p.pts : 0;
   if (p.kind === 'tf') {
     if (!ans) return 0;
-    const ok = p.statements.filter((st, i) => ans[i] === st.v).length, all = p.statements.length;
-    if (ok === all) return p.pts;
-    return p.pts === 2 && ok === all - 1 ? 1 : 0;
+    return partial(p.statements.filter((st, i) => ans[i] === st.v).length, p.statements.length, p.pts);
+  }
+  if (p.kind === 'match' || p.kind === 'fill') {
+    if (!ans) return 0;
+    return partial(p.correct.filter((c, i) => ans[i] === c).length, p.correct.length, p.pts);
   }
   if (p.kind === 'num') return closeEnough(parseNum(ans), p.ans, p.tol || 0.03) ? p.pts : 0;
   return 0;
@@ -99,6 +114,34 @@ function renderPart(task, p, idx, opt, label) {
       tb.append(h('div', { class: 'tf-row' }, h('span', { class: 'tf-s', html: `${k + 1}. ${st.s}` }), h('span', { class: 'pf-wrap' }, mk(true, 'P'), mk(false, 'F'))));
     });
     el.append(tb); getAns = () => cur;
+  } else if (p.kind === 'match') {
+    const cur = task.ans[idx] || (task.ans[idx] = []);
+    const L = 'ABCDEFGH';
+    el.append(h('div', { class: 'm-opts' }, p.options.map((o, k) => h('div', {}, h('b', {}, L[k] + '. '), h('span', { html: o })))));
+    const box = h('div', { class: 'tf' });
+    p.items.forEach((it, k) => {
+      const sel = h('select', { class: 'm-sel' }, h('option', { value: '' }, '–'), p.options.map((o, j) => h('option', { value: j }, L[j])));
+      if (cur[k] != null) sel.value = cur[k];
+      sel.onchange = () => { cur[k] = sel.value === '' ? null : +sel.value; save(); };
+      if (mode === 'review') sel.disabled = true;
+      box.append(h('div', { class: 'tf-row' }, h('span', { class: 'tf-s', html: `${k + 1}. ${it}` }), sel));
+    });
+    el.append(box); getAns = () => cur;
+  } else if (p.kind === 'fill') {
+    const cur = task.ans[idx] || (task.ans[idx] = []);
+    const parts = p.text.split(/\{(\d+)\}/);
+    const txt = h('div', { class: 'fill' });
+    parts.forEach((seg, k) => {
+      if (k % 2 === 0) { txt.append(h('span', { html: seg })); return; }
+      const g = +seg, grp = h('span', { class: 'gap', 'data-g': g });
+      p.gaps[g].forEach((o, j) => {
+        const b = h('button', { class: 'gapo' + (cur[g] === j ? ' sel' : ''), html: o });
+        b.onclick = () => { if (locked()) return; cur[g] = j; grp.querySelectorAll('.gapo').forEach(x => x.classList.remove('sel')); b.classList.add('sel'); save(); };
+        grp.append(b);
+      });
+      txt.append(grp);
+    });
+    el.append(txt); getAns = () => cur;
   } else {
     const ta = h('textarea', { rows: 3, placeholder: 'Twoja odpowiedź (możesz też odpowiedzieć na kartce)' }, task.ans[idx] || '');
     ta.addEventListener('input', () => { task.ans[idx] = ta.value; save(); });
@@ -139,6 +182,12 @@ function renderPart(task, p, idx, opt, label) {
     } else if (p.kind === 'mc') {
       result.append(h('div', { class: auto ? 'ok' : 'bad', html: (auto ? '✔ Dobrze! ' : '✘ ') + `Poprawna odpowiedź: <b>${'ABCD'[p.correct]}</b>` }));
       el.querySelectorAll('.opt').forEach((b, k) => { if (k === p.correct) b.classList.add('right'); else if (k === ans) b.classList.add('wrong'); });
+    } else if (p.kind === 'match') {
+      result.append(h('div', { class: auto === p.pts ? 'ok' : 'bad', html: (auto === p.pts ? '✔ Dobrze! ' : '✘ ') + 'Poprawnie: ' + p.correct.map((c, k) => `${k + 1}–${'ABCDEFGH'[c]}`).join(', ') }));
+      el.querySelectorAll('.tf-row').forEach((row, k) => row.classList.add(ans[k] === p.correct[k] ? 'right' : 'wrong'));
+    } else if (p.kind === 'fill') {
+      result.append(h('div', { class: auto === p.pts ? 'ok' : 'bad', html: (auto === p.pts ? '✔ Dobrze! ' : '✘ ') + 'Poprawnie: ' + p.correct.map((c, k) => p.gaps[k][c]).join(' / ') }));
+      el.querySelectorAll('.gap').forEach(grp => { const g = +grp.dataset.g; grp.querySelectorAll('.gapo').forEach((b, j) => { if (j === p.correct[g]) b.classList.add('right'); else if (j === ans[g]) b.classList.add('wrong'); }); });
     } else if (p.kind === 'tf') {
       result.append(h('div', { class: auto === p.pts ? 'ok' : 'bad', html: `Poprawnie: ${p.statements.map((st, k) => `${k + 1}–${st.v ? 'P' : 'F'}`).join(', ')}` }));
       el.querySelectorAll('.tf-row').forEach((row, k) => row.classList.add(ans[k] === p.statements[k].v ? 'right' : 'wrong'));
@@ -147,18 +196,19 @@ function renderPart(task, p, idx, opt, label) {
     }
     if (p.steps && p.steps.length) {
       const old = help.querySelector('.steps'); if (old) old.remove();
-      result.append(h('details', { class: 'solution', open: mode === 'practice' && p.kind !== 'mc' && p.kind !== 'tf' ? '' : null }, h('summary', {}, 'Pełne rozwiązanie'), h('ol', { class: 'steps' }, p.steps.map(s => h('li', { html: s })))));
+      result.append(h('details', { class: 'solution', open: mode === 'practice' && !isClosed(p) ? '' : null }, h('summary', {}, 'Pełne rozwiązanie'), h('ol', { class: 'steps' }, p.steps.map(s => h('li', { html: s })))));
     }
     if (p.kind === 'num' || p.kind === 'open') {
-      if (p.rubric) result.append(h('details', { class: 'rubric' }, h('summary', {}, 'Zasady oceniania (klucz)'), h('ul', {}, p.rubric.map(r => h('li', {}, r)))));
-      const pick = h('div', { class: 'selfgrade' }, h('span', {}, p.kind === 'num' && auto ? 'Wynik się zgadza. Masz też pełny zapis obliczeń? Punkty: ' : 'Oceń się według klucza: '));
+      const levels = rubricLevels(p);
       let cur = mode === 'review' && task.got[idx] != null ? task.got[idx] : auto, prev = null;
-      for (let k = 0; k <= p.pts; k++) {
-        const b = h('button', { class: 'pt' + (k === cur ? ' sel' : '') }, String(k));
-        b.onclick = () => { cur = k; pick.querySelectorAll('.pt').forEach(x => x.classList.remove('sel')); b.classList.add('sel'); task.got[idx] = k; if (onScore) { onScore(task, idx, k, prev); prev = k; } };
-        pick.append(b);
-      }
-      result.append(pick);
+      const head = p.kind === 'num' && auto ? 'Wynik się zgadza. Zaznacz, co masz zapisane na kartce (tak oceni egzaminator):' : (p.kind === 'num' ? 'Porównaj swoje obliczenia z rozwiązaniem i zaznacz, co pasuje do Twojej kartki:' : 'Porównaj z odpowiedzią wzorcową i zaznacz, co pasuje do Twojej odpowiedzi:');
+      const list = h('div', { class: 'levels' });
+      levels.forEach(lv => {
+        const b = h('button', { class: 'lvl' + (lv.pts === cur ? ' sel' : '') }, h('b', {}, `${lv.pts} pkt`), h('span', {}, lv.txt));
+        b.onclick = () => { cur = lv.pts; list.querySelectorAll('.lvl').forEach(x => x.classList.remove('sel')); b.classList.add('sel'); task.got[idx] = cur; if (onScore) { onScore(task, idx, cur, prev); prev = cur; } };
+        list.append(b);
+      });
+      result.append(h('div', { class: 'selfgrade' }, h('span', { class: 'small' }, head)), list);
       task.got[idx] = cur; if (onScore) { onScore(task, idx, cur, null); prev = cur; }
     } else {
       task.got[idx] = auto; if (onScore) onScore(task, idx, auto, null);
@@ -177,7 +227,13 @@ function buildExam(target = 60, minutes = 180, areas = null) {
   for (let attempt = 0; attempt < 3000; attempt++) {
     const order = [];
     const areaList = areas || AREAS.map(a => a.id);
-    if (target >= 40) areaList.forEach(a => order.push(R.pick(pool.filter(g => g.area === a))));
+    if (target >= 40) {
+      // jak w CKE: przynajmniej jedna wiązka z tekstem źródłowym i jedna z wykresem
+      const txt = pool.filter(g => g.id.startsWith('tekst-')), wyk = pool.filter(g => g.id.includes('-wykres-'));
+      if (txt.length) order.push(R.pick(txt));
+      if (wyk.length) order.push(R.pick(wyk));
+      areaList.forEach(a => { const c = pool.filter(g => g.area === a && !order.includes(g)); if (c.length) order.push(R.pick(c)); });
+    }
     R.shuffle(pool).forEach(g => { if (!order.includes(g)) order.push(g); });
     const tasks = []; let total = 0;
     for (const g of order) {
@@ -235,7 +291,9 @@ function viewHome() {
     h('div', { class: 'cta' },
       ex && !ex.done ? h('a', { class: 'btn primary', href: '#/matura' }, `▶ Wróć do arkusza (${ex.target} pkt)`) : h('a', { class: 'btn primary', href: '#/matura/nowa/60' }, '📝 Pełna matura: 60 pkt, 180 min'),
       h('a', { class: 'btn', href: '#/matura/nowa/20' }, '⏱ Mini-arkusz: 20 pkt, 60 min'),
+      h('a', { class: 'btn', href: '#/powtorka' }, '🧠 Inteligentna powtórka'),
       h('a', { class: 'btn', href: '#/losuj' }, '🎲 Losowe zadanie'),
+      h('a', { class: 'btn', href: '#/arkusze-cke' }, '📄 Prawdziwe arkusze CKE'),
       h('a', { class: 'btn', href: '#/dzial/howto/teoria' }, '🧭 Jak rozwiązywać zadania'))));
   m.append(h('h3', { class: 'sec' }, 'Działy'));
   const grid = h('div', { class: 'areas' });
@@ -281,20 +339,57 @@ function viewTheory(id, container) {
   else m.append(h('a', { class: 'btn primary wide', href: '#/losuj' }, '🎲 Spróbuj na losowym zadaniu'));
 }
 
-function viewPractice(genId, areaId) {
+function viewPractice(genId, areaId, review) {
   let g = genId ? genById(genId) : null;
   if (!g) { const pool = GENS.filter(x => !areaId || x.area === areaId); g = R.pick(pool); }
   const a = areaOf(g.area);
   setTitle(a.name, areaId || genId ? `#/dzial/${g.area}/zadania` : '#/'); nav('practice');
   const m = main(); m.innerHTML = '';
   const t = g.gen(); const task = { gen: g.id, ctx: t.ctx, svg: t.svg, parts: t.parts };
-  m.append(h('p', { class: 'small muted' }, 'Najpierw spróbuj sam. Utknąłeś? Użyj wskazówki albo odsłaniaj rozwiązanie krok po kroku.'));
+  m.append(h('p', { class: 'small muted' }, review ? '🧠 Powtórka: losuję częściej to, co słabiej Ci idzie albo dawno nie było ćwiczone.' : 'Najpierw spróbuj sam. Utknąłeś? Użyj wskazówki albo odsłaniaj rozwiązanie krok po kroku.'));
   m.append(renderBundle(task, { mode: 'practice', onScore: (tk, i, got, prev) => recordPart(g.id, got, tk.parts[i].pts, prev) }));
   m.append(h('div', { class: 'cta' },
-    h('button', { class: 'btn primary', onclick: () => viewPractice(genId, areaId) }, genId ? '🔄 Nowe liczby, ten sam typ' : '🔄 Kolejne losowe zadanie'),
+    review ? h('button', { class: 'btn primary', onclick: () => viewReview() }, '🧠 Następne z powtórki') : h('button', { class: 'btn primary', onclick: () => viewPractice(genId, areaId) }, genId ? '🔄 Nowe liczby, ten sam typ' : '🔄 Kolejne losowe zadanie'),
     genId ? h('a', { class: 'btn', href: `#/losuj/${g.area}` }, '🎲 Inne zadanie z działu') : null,
     h('a', { class: 'btn', href: '#/losuj' }, '🎲 Z dowolnego działu')));
   window.scrollTo(0, 0);
+}
+
+/* Inteligentna powtórka: częściej typy słabe, dawno nie ćwiczone i jeszcze nieznane */
+function pickForReview(areaId) {
+  const s = stats(), now = Date.now();
+  const pool = GENS.filter(g => !areaId || g.area === areaId);
+  const w = pool.map(g => {
+    const x = s.gen[g.id];
+    if (!x || !x.max) return 1.2;
+    const acc = x.got / x.max, days = (now - (x.last || 0)) / 864e5;
+    return 0.15 + 2.5 * (1 - acc) ** 2 + Math.min(days, 14) / 14;
+  });
+  let r = Math.random() * w.reduce((a, b) => a + b, 0);
+  for (let i = 0; i < pool.length; i++) { r -= w[i]; if (r <= 0) return pool[i]; }
+  return pool[pool.length - 1];
+}
+function viewReview() {
+  const g = pickForReview();
+  viewPractice(g.id, null, true);
+}
+
+const CKE = [
+  { t: 'Matura 2025 (maj) – arkusz', u: 'https://cke.gov.pl/images/_EGZAMIN_MATURALNY_OD_2023/Arkusze_egzaminacyjne/2025/Fizyka/MFAP-R0-100-A-2505-arkusz.pdf' },
+  { t: 'Matura 2024 (maj) – arkusz', u: 'https://cke.gov.pl/images/_EGZAMIN_MATURALNY_OD_2023/Arkusze_egzaminacyjne/2024/Fizyka/MFAP-R0-100-A-2405-arkusz.pdf' },
+  { t: 'Matura 2024 (maj) – zasady oceniania', u: 'https://cke.gov.pl/images/_EGZAMIN_MATURALNY_OD_2023/Arkusze_egzaminacyjne/2024/Fizyka/MFAP-R0-100-2405-zasady.pdf' },
+  { t: 'Matura 2024 – strona CKE (arkusz, karta odpowiedzi, klucz)', u: 'https://cke.gov.pl/egzamin-maturalny/egzamin-maturalny-w-formule-2023/arkusze/2024-2/' },
+  { t: 'Matura 2023 (maj) – zasady oceniania', u: 'https://cke.gov.pl/images/_EGZAMIN_MATURALNY_OD_2023/Arkusze_egzaminacyjne/2023/Fizyka/MFAP-R0-100-2305-zasady.pdf' },
+  { t: 'Matura 2023 – strona CKE (arkusz i klucz)', u: 'https://cke.gov.pl/egzamin-maturalny/egzamin-maturalny-w-formule-2023/arkusze/2023-2/' },
+  { t: 'Wszystkie arkusze Formuły 2023 (też 2025, czerwcowe i próbne)', u: 'https://cke.gov.pl/egzamin-maturalny/egzamin-maturalny-w-formule-2023/arkusze/' },
+  { t: 'Sprawozdanie CKE 2023 – z czym zdający mieli problem', u: 'https://cke.gov.pl/images/_EGZAMIN_MATURALNY_OD_2023/Informacje_o_wynikach/2023/sprawozdanie/MFAP_fizyka_sprawozdanie_2023.pdf' }
+];
+function viewCke() {
+  setTitle('Prawdziwe arkusze CKE', '#/'); nav('exam');
+  const m = main(); m.innerHTML = '';
+  m.append(h('section', { class: 'hero' }, h('h2', {}, 'Oryginalne arkusze CKE'),
+    h('p', { class: 'muted' }, 'Arkusze z prawdziwych matur w formule 2023 (tej samej, którą będziesz pisać). Otwierają się w przeglądarce telefonu (potrzebny internet). Najlepiej: wydrukuj albo pisz na kartce, mierz czas 180 minut, potem sprawdź według zasad oceniania.'),
+    h('div', { class: 'gens' }, CKE.map(c => h('a', { class: 'gen', href: c.u, target: '_blank', rel: 'noopener' }, h('span', {}, c.t), h('span', { class: 'small muted' }, '↗'))))));
 }
 
 function viewExamStart(target) {
@@ -313,7 +408,7 @@ function viewExamStart(target) {
       h('li', {}, 'Przygotuj kartkę, kalkulator i kartę wzorów (zakładka „Wzory”).'),
       h('li', {}, 'Po zakończeniu zamknięte sprawdzą się same, a otwarte ocenisz według klucza.')),
     cur && !cur.done ? h('p', { class: 'warn' }, 'Masz niedokończony arkusz – rozpoczęcie nowego go usunie.') : null,
-    h('div', { class: 'cta' }, h('button', { class: 'btn primary', onclick: go }, '▶ Start'), cur && !cur.done ? h('a', { class: 'btn', href: '#/matura' }, 'Wróć do niedokończonego') : null)));
+    h('div', { class: 'cta' }, h('button', { class: 'btn primary', onclick: go }, '▶ Start'), h('a', { class: 'btn', href: '#/arkusze-cke' }, '📄 Arkusze CKE'), cur && !cur.done ? h('a', { class: 'btn', href: '#/matura' }, 'Wróć do niedokończonego') : null)));
 }
 
 function viewExam() {
@@ -397,6 +492,8 @@ function route() {
     else if (a === 'dzial') viewArea(b, c);
     else if (a === 'losuj') viewPractice(null, b);
     else if (a === 'zadanie') viewPractice(b);
+    else if (a === 'powtorka') viewReview();
+    else if (a === 'arkusze-cke') viewCke();
     else if (a === 'matura' && b === 'nowa') viewExamStart(+c || 60);
     else if (a === 'matura') viewExam();
     else if (a === 'wzory') viewFormulas();

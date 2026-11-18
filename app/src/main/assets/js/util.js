@@ -79,6 +79,26 @@ function closeEnough(user, ans, tol = 0.03) {
   return Math.abs(user - ans) / Math.abs(ans) <= tol;
 }
 
+
+/* Wykres z siatką do odczytu wartości.
+   o = { xl, yl, xmax, ymax, xmin=0, ymin=0, xstep, ystep, series:[{pts:[[x,y],…], dots, dash, label}], fmtx, fmty } */
+function plot(o) {
+  const W = 330, H = 220, L = 46, B = 34, T = 16, Rm = 14;
+  const xmin = o.xmin || 0, ymin = o.ymin || 0;
+  const X = x => L + (x - xmin) / (o.xmax - xmin) * (W - L - Rm), Y = y => H - B - (y - ymin) / (o.ymax - ymin) * (H - B - T);
+  const fx = o.fmtx || (x => fmt(x, 3)), fy = o.fmty || (y => fmt(y, 3));
+  let g = '';
+  for (let x = xmin; x <= o.xmax + 1e-9; x += o.xstep) g += `<path d="M${X(x).toFixed(1)},${Y(ymin).toFixed(1)}V${Y(o.ymax).toFixed(1)}" class="gr"/><text x="${X(x).toFixed(1)}" y="${H - B + 14}" text-anchor="middle">${fx(+x.toFixed(9))}</text>`;
+  for (let y = ymin; y <= o.ymax + 1e-9; y += o.ystep) g += `<path d="M${X(xmin).toFixed(1)},${Y(y).toFixed(1)}H${X(o.xmax).toFixed(1)}" class="gr"/><text x="${L - 5}" y="${(Y(y) + 4).toFixed(1)}" text-anchor="end">${fy(+y.toFixed(9))}</text>`;
+  let sv = '';
+  (o.series || []).forEach(se => {
+    if (se.pts.length > 1 && !se.only) sv += `<path d="${se.pts.map((pt, i) => (i ? 'L' : 'M') + X(pt[0]).toFixed(1) + ',' + Y(pt[1]).toFixed(1)).join(' ')}" class="ln${se.dash ? ' dsh' : ''}${se.alt ? ' alt' : ''}"/>`;
+    if (se.dots) se.pts.forEach(pt => { sv += `<circle cx="${X(pt[0]).toFixed(1)}" cy="${Y(pt[1]).toFixed(1)}" r="3.2" class="dot"/>`; });
+    if (se.label) { const pt = se.pts[se.pts.length - 1]; sv += `<text x="${(X(pt[0]) - 4).toFixed(1)}" y="${(Y(pt[1]) - 6).toFixed(1)}" text-anchor="end" class="lab">${se.label}</text>`; }
+  });
+  return `<svg viewBox="0 0 ${W} ${H}" class="plot">${g}<path d="M${L},${Y(ymin)}H${W - Rm + 4}M${L},${Y(ymin)}V${T - 6}" class="ax"/>${sv}<text x="${W - 2}" y="${H - 4}" text-anchor="end" class="axl">${o.xl}</text><text x="${L + 4}" y="${T - 4}" class="axl">${o.yl}</text></svg>`;
+}
+
 const deg = x => x * Math.PI / 180;
 const rad2deg = x => x * 180 / Math.PI;
 
@@ -94,4 +114,4 @@ const AREAS = [
 const GENS = [];
 function G(def) { GENS.push(def); }
 
-if (typeof module !== 'undefined') module.exports = { C, R, fmt, d, pl, fr, sq, eq, v, parseNum, closeEnough, deg, rad2deg, AREAS, GENS, G };
+if (typeof module !== 'undefined') module.exports = { plot, C, R, fmt, d, pl, fr, sq, eq, v, parseNum, closeEnough, deg, rad2deg, AREAS, GENS, G };

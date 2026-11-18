@@ -3,7 +3,7 @@ const fs = require('fs'), path = require('path'), vm = require('vm');
 const dir = path.join(__dirname, '../app/src/main/assets/js');
 const ctx = { console, Math, module: undefined };
 vm.createContext(ctx);
-for (const f of ['util.js', 'gen-mech.js', 'gen-grav.js', 'gen-wave.js', 'gen-elec.js', 'gen-thermo.js', 'gen-atom.js', 'gen-mech2.js', 'gen-grav2.js', 'gen-wave2.js', 'gen-elec2.js', 'gen-thermo2.js', 'gen-atom2.js', 'gen-extra.js'])
+for (const f of ['util.js', 'gen-mech.js', 'gen-grav.js', 'gen-wave.js', 'gen-elec.js', 'gen-thermo.js', 'gen-atom.js', 'gen-mech2.js', 'gen-grav2.js', 'gen-wave2.js', 'gen-elec2.js', 'gen-thermo2.js', 'gen-atom2.js', 'gen-extra.js', 'gen-extra2.js', 'gen-wykresy.js', 'gen-zamkniete.js', 'gen-teksty.js'])
   vm.runInContext(fs.readFileSync(path.join(dir, f), 'utf8').replace(/^'use strict';/m, '').replace(/^const (\w+)/gm, 'var $1'), ctx, { filename: f });
 const { GENS, AREAS, parseNum, closeEnough } = ctx;
 let errors = 0;
@@ -22,6 +22,8 @@ for (const g of GENS) {
       if ((p.kind === 'num' || p.kind === 'open') && (!p.steps && !p.model)) err(g, 'brak rozwiązania');
       if (p.kind === 'tf' && !(p.statements.length >= 2)) err(g, 'tf');
       if (p.kind === 'open' && !p.model) err(g, 'open model');
+      if (p.kind === 'match') { if (p.correct.length !== p.items.length || p.correct.some(c => !(c >= 0 && c < p.options.length))) err(g, 'match'); if (new Set(p.correct).size !== p.correct.length) err(g, 'match: powtórzone odpowiedzi'); }
+      if (p.kind === 'fill') { const n = (p.text.match(/\{\d+\}/g) || []).length; if (n !== p.gaps.length || p.correct.length !== n || p.correct.some((c, k) => !(c >= 0 && c < p.gaps[k].length))) err(g, 'fill: ' + p.text.slice(0, 40)); }
     }
   }
 }
