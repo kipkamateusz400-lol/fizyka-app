@@ -29,10 +29,10 @@ G({ id: 'thermo-izobara', area: 'thermo', title: 'Przemiana izobaryczna gazu dos
   const n = R.n(0.5, 3, 0.5), T1 = R.n(270, 330, 10), T2 = T1 + R.n(50, 300, 10), p = R.n(1, 3, 0.5) * 1e5;
   const V1 = n * C.R * T1 / p, V2 = n * C.R * T2 / p, W = p * (V2 - V1), dU = 1.5 * n * C.R * (T2 - T1), Q = W + dU;
   return {
-    ctx: `${d(n)} mol jednoatomowego gazu doskonałego ogrzano izobarycznie pod ciśnieniem ${fmt(p)} Pa od temperatury ${d(T1)} K do ${d(T2)} K. Energia wewnętrzna gazu jednoatomowego U = (3/2)nRT, R = 8,31 J/(mol·K).`,
+    ctx: `${d(n)} mol jednoatomowego gazu doskonałego ogrzano izobarycznie pod ciśnieniem ${fmt(p)} Pa od temperatury ${d(T1)} K do ${d(T2)} K. Energia wewnętrzna gazu jednoatomowego U = (3/2)nRT, R = 8,314 J/(mol·K).`,
     parts: [
       { kind: 'num', pts: 1, q: 'Oblicz pracę wykonaną przez gaz.', ans: W, unit: 'J', hint: 'W przemianie izobarycznej W = pΔV = nRΔT.',
-        steps: [`${eq(`W = pΔV = nRΔT = ${d(n)}·8,31·${T2 - T1} ≈ <b>${fmt(W)} J</b>`)}`], rubric: ['1 pkt – poprawny wynik.'] },
+        steps: [`${eq(`W = pΔV = nRΔT = ${d(n)}·8,314·${T2 - T1} ≈ <b>${fmt(W)} J</b>`)}`], rubric: ['1 pkt – poprawny wynik.'] },
       { kind: 'num', pts: 2, q: 'Oblicz ciepło dostarczone do gazu. Zapisz obliczenia.', ans: Q, unit: 'J',
         hint: 'I zasada termodynamiki: Q = ΔU + W (W – praca wykonana przez gaz).',
         steps: [`${eq(`ΔU = ${fr('3', '2')}nRΔT ≈ ${fmt(dU)} J`)}`, `${eq(`Q = ΔU + W ≈ <b>${fmt(Q)} J</b>`)}(dla gazu jednoatomowego Q = (5/2)nRΔT)`], rubric: ['2 pkt – poprawny wynik.', '1 pkt – poprawna zmiana energii wewnętrznej lub poprawny zapis I zasady.', '0 pkt – brak postępu.'] },

@@ -58,19 +58,35 @@ function sq(a) { return `√<span class="sq">${a}</span>`; }
 function eq(s) { return `<div class="eq">${s}</div>`; }
 function v(s) { return `<i>${s}</i>`; }
 
-/* Odczytanie liczby wpisanej przez ucznia */
-function parseNum(str) {
-  if (str == null) return NaN;
+/* Ujednolicenie zapisu liczby wpisanej przez ucznia (przecinek, ·10^n, indeksy górne) */
+function normNum(str) {
+  if (str == null) return '';
   let s = String(str).trim().toLowerCase();
-  if (!s) return NaN;
+  if (!s) return '';
   const back = { '⁻': '-', '⁰': '0', '¹': '1', '²': '2', '³': '3', '⁴': '4', '⁵': '5', '⁶': '6', '⁷': '7', '⁸': '8', '⁹': '9' };
-  s = s.replace(/[⁻⁰¹²³⁴⁵⁶⁷⁸⁹]/g, ch => back[ch]);
+  // wykładnik zapisany indeksem górnym (10⁻³) zamieniamy na 10^-3 – tak „105” zostaje liczbą 105, a nie 10⁵
+  s = s.replace(/[⁻⁰¹²³⁴⁵⁶⁷⁸⁹]+/g, m => '^' + m.split('').map(ch => back[ch]).join(''));
   s = s.replace(/\s+/g, '').replace(/,/g, '.').replace(/−/g, '-');
   s = s.replace(/[·*x×]10\^?\(?(-?\d+)\)?/, 'e$1');
-  s = s.replace(/^10\^?(-?\d+)$/, '1e$1');
+  s = s.replace(/^10\^\(?(-?\d+)\)?$/, '1e$1');
   s = s.replace(/[a-zA-Z°%/]+$/, m => (m.startsWith('e') ? m : ''));
+  return s;
+}
+
+/* Odczytanie liczby wpisanej przez ucznia */
+function parseNum(str) {
+  const s = normNum(str);
+  if (!s) return NaN;
   const n = Number(s);
   return isFinite(n) ? n : NaN;
+}
+
+/* Liczba cyfr znaczących w zapisie ucznia (np. „1,0” → 2, „0,0450” → 3, „6,7·10^-3” → 2) */
+function sigDigits(str) {
+  const s = normNum(str);
+  if (!s || !isFinite(Number(s))) return 0;
+  const mant = s.split('e')[0].replace(/^[+-]/, '').replace('.', '').replace(/^0+/, '');
+  return mant.length;
 }
 
 function closeEnough(user, ans, tol = 0.03) {
@@ -79,6 +95,18 @@ function closeEnough(user, ans, tol = 0.03) {
   return Math.abs(user - ans) / Math.abs(ans) <= tol;
 }
 
+/* Sprawdzenie wyniku liczbowego: mieści się w tolerancji ALBO jest poprawnie zaokrąglonym
+   wynikiem (co najmniej 2 cyfry znaczące) – tak jak na maturze, gdzie 1,0 m/s przy wyniku
+   1,04 m/s jest dobrą odpowiedzią. */
+function checkNum(str, ans, tol = 0.03) {
+  const u = parseNum(str);
+  if (!isFinite(u)) return false;
+  if (closeEnough(u, ans, tol)) return true;
+  const n = sigDigits(str);
+  if (n < 2 || ans === 0) return false;
+  const r = +ans.toPrecision(n);
+  return Math.abs(u - r) <= Math.abs(r) * 1e-9;
+}
 
 /* Wykres z siatką do odczytu wartości.
    o = { xl, yl, xmax, ymax, xmin=0, ymin=0, xstep, ystep, series:[{pts:[[x,y],…], dots, dash, label}], fmtx, fmty } */
@@ -94,6 +122,12 @@ function plot(o) {
   (o.series || []).forEach(se => {
     if (se.pts.length > 1 && !se.only) sv += `<path d="${se.pts.map((pt, i) => (i ? 'L' : 'M') + X(pt[0]).toFixed(1) + ',' + Y(pt[1]).toFixed(1)).join(' ')}" class="ln${se.dash ? ' dsh' : ''}${se.alt ? ' alt' : ''}"/>`;
     if (se.dots) se.pts.forEach(pt => { sv += `<circle cx="${X(pt[0]).toFixed(1)}" cy="${Y(pt[1]).toFixed(1)}" r="3.2" class="dot"/>`; });
+    /* niepewności: se.err = [[dx, dy], …] – prostokąty niepewności wokół punktów */
+    if (se.err) se.pts.forEach((pt, i) => {
+      const [dx, dy] = se.err[i] || [0, 0];
+      const x1 = X(pt[0] - dx), x2 = X(pt[0] + dx), y1 = Y(pt[1] + dy), y2 = Y(pt[1] - dy);
+      sv += `<rect x="${x1.toFixed(1)}" y="${y1.toFixed(1)}" width="${Math.max(1, x2 - x1).toFixed(1)}" height="${Math.max(1, y2 - y1).toFixed(1)}" fill="none" class="ln" style="stroke-width:1"/>`;
+    });
     if (se.label) { const pt = se.pts[se.pts.length - 1]; sv += `<text x="${(X(pt[0]) - 4).toFixed(1)}" y="${(Y(pt[1]) - 6).toFixed(1)}" text-anchor="end" class="lab">${se.label}</text>`; }
   });
   return `<svg viewBox="0 0 ${W} ${H}" class="plot">${g}<path d="M${L},${Y(ymin)}H${W - Rm + 4}M${L},${Y(ymin)}V${T - 6}" class="ax"/>${sv}<text x="${W - 2}" y="${H - 4}" text-anchor="end" class="axl">${o.xl}</text><text x="${L + 4}" y="${T - 4}" class="axl">${o.yl}</text></svg>`;
@@ -109,9 +143,25 @@ const AREAS = [
   { id: 'wave', name: 'Drgania, fale, optyka', full: 'Drgania, fale i optyka', icon: '〰' },
   { id: 'elec', name: 'Elektryczność i magnetyzm', full: 'Elektryczność i magnetyzm', icon: '⚡' },
   { id: 'thermo', name: 'Termodynamika i materia', full: 'Własności materii, termodynamika, hydrostatyka i aerostatyka', icon: '🌡' },
-  { id: 'atom', name: 'Fizyka atomowa i jądrowa', full: 'Elementy fizyki atomowej i jądrowej', icon: '⚛' }
+  { id: 'atom', name: 'Fizyka atomowa i jądrowa', full: 'Elementy fizyki atomowej i jądrowej', icon: '⚛' },
+  { id: 'dosw', name: 'Doświadczenia i niepewności', full: 'Wymagania przekrojowe: doświadczenia, niepewności pomiarowe, wykresy', icon: '🔬' }
 ];
 const GENS = [];
 function G(def) { GENS.push(def); }
 
-if (typeof module !== 'undefined') module.exports = { plot, C, R, fmt, d, pl, fr, sq, eq, v, parseNum, closeEnough, deg, rad2deg, AREAS, GENS, G };
+/* Szacowany poziom trudności typu zadania (1–3): z punktacji, jak w arkuszach CKE –
+   zadania wieloetapowe za 3–4 pkt są najtrudniejsze. Generator może podać własny `lvl`. */
+function levelOf(g) {
+  if (g.lvl) return g.lvl;
+  if (g._lvl) return g._lvl;
+  let lvl = 1;
+  try {
+    const t = g.gen();
+    const maxP = Math.max(...t.parts.map(p => p.pts)), sum = t.parts.reduce((a, p) => a + p.pts, 0);
+    lvl = maxP >= 3 || sum >= 6 ? 3 : (maxP <= 1 || sum <= 3) ? 1 : 2;
+  } catch (e) { lvl = 2; }
+  g._lvl = lvl;
+  return lvl;
+}
+
+if (typeof module !== 'undefined') module.exports = { plot, C, R, fmt, d, pl, fr, sq, eq, v, parseNum, sigDigits, closeEnough, checkNum, deg, rad2deg, AREAS, GENS, G, levelOf };

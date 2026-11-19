@@ -211,7 +211,7 @@ G({ id: 'thermo-wykres-izoterma', area: 'thermo', title: 'Wykres izotermy p(V)',
   const ymax = Math.ceil(k) + 1, ys = ymax > 8 ? 2 : 1;
   const VA = 2, pA = k / VA;
   return {
-    ctx: `Na wykresie przedstawiono izotermę dla ${pl(n)} mola gazu doskonałego (objętość w dm³, ciśnienie w 10⁵ Pa). R = 8,31 J/(mol·K).`,
+    ctx: `Na wykresie przedstawiono izotermę dla ${pl(n)} mola gazu doskonałego (objętość w dm³, ciśnienie w 10⁵ Pa). R = 8,314 J/(mol·K).`,
     svg: plot({ xl: 'V, dm³', yl: 'p, 10⁵ Pa', xmax: 5, ymax, xstep: 1, ystep: ys, series: [{ pts }, { pts: [[VA, pA]], dots: true, only: true }] }),
     parts: [
       { kind: 'num', pts: 2, q: 'Korzystając z zaznaczonego punktu, oblicz temperaturę gazu. Zapisz obliczenia.', ans: T, unit: 'K', tol: 0.05,

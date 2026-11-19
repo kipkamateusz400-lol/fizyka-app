@@ -67,10 +67,10 @@ G({ id: 'elec-wheatstone', area: 'elec', title: 'Mostek Wheatstone’a', gen() {
   const R1 = R.n(10, 100, 10), R2 = R.n(10, 200, 10), R3 = R.n(10, 200, 10);
   const Rx = R2 * R3 / R1;
   return {
-    ctx: `W mostku Wheatstone’a w jednej gałęzi połączono szeregowo oporniki R₁ = ${R1} Ω i R₂ = ${R2} Ω, a w drugiej opornik R₃ = ${R3} Ω i nieznany opornik R<sub>x</sub> (R₁ naprzeciw R₃, R₂ naprzeciw R<sub>x</sub>). Galwanometr łączący punkty między opornikami obu gałęzi wskazuje zero.`,
+    ctx: `W mostku Wheatstone’a w jednej gałęzi połączono szeregowo oporniki R₁ = ${R1} Ω i R₂ = ${R2} Ω, a w drugiej opornik R₃ = ${R3} Ω i nieznany opornik R<sub>x</sub>. Obie gałęzie są podłączone równolegle do źródła: oporniki R₁ i R₃ są dołączone do tego samego bieguna źródła, a R₂ i R<sub>x</sub> – do drugiego bieguna. Galwanometr łączący punkty między opornikami obu gałęzi wskazuje zero.`,
     parts: [
       { kind: 'num', pts: 2, q: 'Oblicz opór R<sub>x</sub>. Zapisz obliczenia.', ans: Rx, unit: 'Ω',
-        hint: 'Brak prądu w galwanometrze → punkty mają ten sam potencjał → spadki napięć na R₁ i R₃ są równe, tak samo na R₂ i R_x. Stąd R₁/R₂ = R₃/R_x.',
+        hint: 'Brak prądu w galwanometrze → punkty mają ten sam potencjał → spadki napięć na R₁ i R₃ są równe (oba zaczynają się w tym samym węźle), tak samo na R₂ i R_x. Stąd R₁/R₂ = R₃/R_x.',
         steps: [`Równowaga mostka: ${eq(`${fr('R₁', 'R₂')} = ${fr('R₃', 'R<sub>x</sub>')}`)}`, `${eq(`R<sub>x</sub> = ${fr('R₂R₃', 'R₁')} = <b>${fmt(Rx)} Ω</b>`)}`], rubric: ['2 pkt – poprawny wynik.', '1 pkt – poprawny warunek równowagi mostka.', '0 pkt – brak postępu.'] },
       { kind: 'open', pts: 1, q: 'Wyjaśnij, dlaczego wynik pomiaru mostkiem nie zależy od napięcia źródła zasilającego.', model: 'Warunek równowagi (R₁/R₂ = R₃/Rₓ) zawiera tylko stosunki oporów. Zmiana napięcia źródła zmienia wszystkie prądy proporcjonalnie, więc potencjały punktów pomiarowych pozostają równe.' }
     ]

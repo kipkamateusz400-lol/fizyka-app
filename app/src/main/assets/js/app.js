@@ -18,6 +18,8 @@ const genById = id => GENS.find(g => g.id === id);
 const isClosed = p => ['mc', 'tf', 'match', 'fill'].includes(p.kind);
 /* zadania zamknięte wielopunktowe: komplet = max, jeden błąd = 1 pkt (gdy max 2) */
 const partial = (ok, all, pts) => ok === all ? pts : (pts === 2 && ok === all - 1 ? 1 : 0);
+const STARS = ['', '★', '★★', '★★★'];
+const LVL_NAME = ['', 'podstawowe', 'średnie', 'trudne'];
 
 function rubricLevels(p) {
   let lv = (p.rubric || []).map(r => { const m = String(r).match(/^\s*(\d)\s*pkt\s*[–-]\s*(.*)$/); return m ? { pts: +m[1], txt: m[2] } : null; }).filter(Boolean);
@@ -60,7 +62,7 @@ function autoScore(p, ans) {
     if (!ans) return 0;
     return partial(p.correct.filter((c, i) => ans[i] === c).length, p.correct.length, p.pts);
   }
-  if (p.kind === 'num') return closeEnough(parseNum(ans), p.ans, p.tol || 0.03) ? p.pts : 0;
+  if (p.kind === 'num') return checkNum(ans, p.ans, p.tol || 0.03) ? p.pts : 0;
   return 0;
 }
 
@@ -95,7 +97,7 @@ function renderPart(task, p, idx, opt, label) {
     const inp = h('input', { type: 'text', inputmode: 'decimal', placeholder: 'wynik', value: task.ans[idx] || '', autocomplete: 'off' });
     inp.addEventListener('input', () => { task.ans[idx] = inp.value; save(); });
     el.append(h('div', { class: 'ans-row' }, inp, h('span', { class: 'unit' }, p.unit || '')));
-    if (task.parts.findIndex(x => x.kind === 'num') === idx && mode !== 'review') el.append(h('div', { class: 'small muted' }, 'Wpisz sam wynik liczbowy (np. 0,98 albo 6,7·10^-3 lub 6,7e-3). Obliczenia rób na kartce – jak na maturze.'));
+    if (task.parts.findIndex(x => x.kind === 'num') === idx && mode !== 'review') el.append(h('div', { class: 'small muted' }, 'Wpisz sam wynik liczbowy (np. 0,98 albo 6,7·10^-3 lub 6,7e-3). Poprawnie zaokrąglony wynik (min. 2 cyfry znaczące) też jest zaliczany. Obliczenia rób na kartce – jak na maturze.'));
     getAns = () => inp.value;
     if (mode === 'review') inp.disabled = true;
   } else if (p.kind === 'mc') {
@@ -287,7 +289,7 @@ function viewHome() {
   const ex = store.get('exam', null);
   m.append(h('section', { class: 'hero' },
     h('h2', {}, 'Ucz się, ćwicz, pisz próbne matury'),
-    h('p', { class: 'muted' }, `${GENS.length} typów zadań w 6 działach informatora CKE 2025. Liczby losują się za każdym razem, więc zadania się nie kończą.`),
+    h('p', { class: 'muted' }, `${GENS.length} typów zadań w ${AREAS.length} działach. Liczby losują się za każdym razem, więc zadania się nie kończą.`),
     h('div', { class: 'cta' },
       ex && !ex.done ? h('a', { class: 'btn primary', href: '#/matura' }, `▶ Wróć do arkusza (${ex.target} pkt)`) : h('a', { class: 'btn primary', href: '#/matura/nowa/60' }, '📝 Pełna matura: 60 pkt, 180 min'),
       h('a', { class: 'btn', href: '#/matura/nowa/20' }, '⏱ Mini-arkusz: 20 pkt, 60 min'),
@@ -317,12 +319,21 @@ function viewArea(id, tab) {
   if (tab === 'zadania') {
     m.append(h('a', { class: 'btn primary wide', href: `#/losuj/${id}` }, '🎲 Losuj zadanie z tego działu'));
     const s = stats();
+    let filter = store.get('lvl', 0);
     const list = h('div', { class: 'gens' });
-    GENS.filter(g => g.area === id).forEach(g => {
-      const x = s.gen[g.id];
-      list.append(h('a', { class: 'gen', href: `#/zadanie/${g.id}` }, h('span', {}, g.title), h('span', { class: 'small muted' }, x ? `${x.got}/${x.max} pkt` : 'nowe')));
-    });
-    m.append(list);
+    const chips = h('div', { class: 'tabs chips' });
+    const draw = () => {
+      chips.innerHTML = ''; list.innerHTML = '';
+      [0, 1, 2, 3].forEach(l => chips.append(h('a', { class: filter === l ? 'on' : '', href: 'javascript:void 0', onclick: () => { filter = l; store.set('lvl', l); draw(); } }, l ? `${STARS[l]} ${LVL_NAME[l]}` : 'wszystkie')));
+      const rows = GENS.filter(g => g.area === id).map(g => [g, levelOf(g)]).filter(([, l]) => !filter || l === filter).sort((x, y) => x[1] - y[1]);
+      if (!rows.length) list.append(h('p', { class: 'muted' }, `W tym dziale nie ma zadań na poziomie ${STARS[filter]} ${LVL_NAME[filter]}. Wybierz inny poziom.`));
+      rows.forEach(([g, l]) => {
+        const x = s.gen[g.id];
+        list.append(h('a', { class: 'gen', href: `#/zadanie/${g.id}` }, h('span', {}, `${STARS[l]} ${g.title}`), h('span', { class: 'small muted' }, x ? `${x.got}/${x.max} pkt` : 'nowe')));
+      });
+    };
+    draw();
+    m.append(chips, h('p', { class: 'small muted' }, 'Poziom szacowany na podstawie punktacji zadania. Zacznij od ★ i przechodź wyżej.'), list);
   } else viewTheory(id, m);
 }
 
@@ -404,9 +415,9 @@ function viewExamStart(target) {
     h('h2', {}, target === 60 ? 'Pełny arkusz – poziom rozszerzony' : 'Mini-arkusz'),
     h('ul', {},
       h('li', {}, `${target} punktów, czas ${target === 60 ? '180' : '60'} minut (zegar odlicza w tle, możesz wyjść z aplikacji).`),
-      h('li', {}, 'Zadania ze wszystkich 6 działów, ok. 20% punktów to zadania zamknięte – jak w informatorze CKE.'),
+      h('li', {}, target >= 40 ? 'Zadania ze wszystkich działów, w tym zadanie doświadczalne, z tekstem źródłowym i z wykresem. Kilkanaście procent punktów to zadania zamknięte.' : 'Losowe zadania z różnych działów, część z nich zamknięta.'),
       h('li', {}, 'Przygotuj kartkę, kalkulator i kartę wzorów (zakładka „Wzory”).'),
-      h('li', {}, 'Po zakończeniu zamknięte sprawdzą się same, a otwarte ocenisz według klucza.')),
+      h('li', {}, 'Po zakończeniu zamknięte sprawdzą się same, a otwarte ocenisz według klucza. Wyniki trafią do statystyk i powtórki.')),
     cur && !cur.done ? h('p', { class: 'warn' }, 'Masz niedokończony arkusz – rozpoczęcie nowego go usunie.') : null,
     h('div', { class: 'cta' }, h('button', { class: 'btn primary', onclick: go }, '▶ Start'), h('a', { class: 'btn', href: '#/arkusze-cke' }, '📄 Arkusze CKE'), cur && !cur.done ? h('a', { class: 'btn', href: '#/matura' }, 'Wróć do niedokończonego') : null)));
 }
@@ -446,10 +457,23 @@ function viewExam() {
     ex.score = got; persist();
   };
   let ready = false;
-  ex.tasks.forEach((t, i) => { t.got = t.got || []; m.append(renderBundle(t, { mode: 'review', num: i + 1, onScore: (tk, idx, got) => { tk.got[idx] = got; if (ready) update(); } })); });
+  ex.tasks.forEach((t, i) => {
+    t.got = t.got || [];
+    m.append(renderBundle(t, { mode: 'review', num: i + 1, onScore: (tk, idx, got, prev) => {
+      tk.got[idx] = got;
+      if (!ready) return;
+      update();
+      // poprawka samooceny po zapisaniu wyników – aktualizujemy statystyki typu zadania
+      if (ex.statsDone && prev != null && genById(tk.gen)) recordPart(tk.gen, got, tk.parts[idx].pts, prev);
+    } }));
+  });
   ready = true; update();
   if (!ex.saved) {
-    const s = stats(); s.exams.push({ id: ex.id, date: ex.start, target: ex.target, score: ex.score }); store.set('stats', s); ex.saved = true; persist();
+    const s = stats(); s.exams.push({ id: ex.id, date: ex.start, target: ex.target, score: ex.score }); store.set('stats', s); ex.saved = true;
+    // wyniki arkusza liczą się też do statystyk typów zadań (powtórka, najsłabsze typy)
+    ex.tasks.forEach(t => { if (genById(t.gen)) t.parts.forEach((p, i) => recordPart(t.gen, t.got[i] || 0, p.pts, null)); });
+    ex.statsDone = true;
+    persist();
   }
   const saveScore = () => { const s = stats(); const e = s.exams.find(x => x.id === ex.id); if (e) e.score = ex.score; store.set('stats', s); };
   m.append(h('div', { class: 'cta' }, h('button', { class: 'btn primary', onclick: () => { saveScore(); location.hash = '#/matura/nowa/' + ex.target; } }, '📝 Nowy arkusz'), h('button', { class: 'btn', onclick: () => { saveScore(); location.hash = '#/postep'; } }, '📊 Zapisz i zobacz postęp')));
@@ -459,8 +483,8 @@ function confirmFinish() { return window.confirm('Zakończyć arkusz i przejść
 function viewFormulas() {
   setTitle('Wzory i stałe'); nav('wzory');
   const m = main(); m.innerHTML = '';
-  m.append(h('p', { class: 'small muted' }, 'Najważniejsze wzory z karty CKE „Wybrane wzory i stałe fizykochemiczne” (2024/2025). Na egzaminie dostaniesz pełną kartę.'));
-  AREAS.forEach(a => m.append(h('section', { class: 'theory' }, h('h3', {}, `${a.icon} ${a.name}`), h('table', { class: 'tbl f' }, FORMULAS[a.id].map(([n, f]) => h('tr', {}, h('td', {}, n), h('td', { html: f })))))));
+  m.append(h('p', { class: 'small muted' }, 'Ściąga z najważniejszych wzorów. Na egzaminie dostaniesz pełną kartę CKE „Wybrane wzory i stałe fizykochemiczne” – przejrzyj ją przed maturą, żeby wiedzieć, gdzie co jest.'));
+  AREAS.forEach(a => { if (FORMULAS[a.id]) m.append(h('section', { class: 'theory' }, h('h3', {}, `${a.icon} ${a.name}`), h('table', { class: 'tbl f' }, FORMULAS[a.id].map(([n, f]) => h('tr', {}, h('td', {}, n), h('td', { html: f })))))); });
   m.append(h('section', { class: 'theory' }, h('h3', {}, 'Stałe fizyczne'), h('table', { class: 'tbl f' }, CONSTANTS.map(([n, f]) => h('tr', {}, h('td', {}, n), h('td', { html: f }))))));
 }
 

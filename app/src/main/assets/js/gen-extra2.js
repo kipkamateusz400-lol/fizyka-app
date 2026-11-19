@@ -48,7 +48,7 @@ G({ id: 'mech-bezwladnosc', area: 'mech', title: 'Układ nieinercjalny – wahad
 }});
 
 G({ id: 'thermo-naczynia', area: 'thermo', title: 'Naczynia połączone z dwiema cieczami', gen() {
-  const liq = R.pick([{ n: 'oliwę', r: 920 }, { n: 'naftę', r: 800 }, { n: 'olej', r: 900 }, { n: 'alkohol (niemieszający się dzięki przegrodzie)', r: 790 }]);
+  const liq = R.pick([{ n: 'oliwę', r: 920 }, { n: 'naftę', r: 800 }, { n: 'olej', r: 900 }, { n: 'olej parafinowy', r: 850 }]);
   const ho = R.n(5, 20, 1), hw = ho * liq.r / 1000, dh = ho - hw;
   return {
     ctx: `Do U-rurki z wodą (gęstość 1000 kg/m³) wlano do jednego ramienia ${liq.n} o gęstości ${liq.r} kg/m³. Słup tej cieczy ma wysokość ${ho} cm (liczoną od granicy z wodą). Ciecze się nie mieszają.`,
@@ -66,7 +66,7 @@ G({ id: 'thermo-ciepla-molowe', area: 'thermo', title: 'Ciepła molowe C_v i C_p
   const n = R.n(0.5, 3, 0.5), dT = R.n(10, 100, 10);
   const Cv = gas.cv * C.R, Cp = Cv + C.R, Qv = n * Cv * dT, Qp = n * Cp * dT;
   return {
-    ctx: `Mamy ${pl(n)} mol gazu doskonałego ${gas.n}. Ciepło molowe przy stałej objętości wynosi C<sub>v</sub> = ${gas.cv === 1.5 ? '3/2' : '5/2'}·R, R = 8,31 J/(mol·K).`,
+    ctx: `Mamy ${pl(n)} mol gazu doskonałego ${gas.n}. Ciepło molowe przy stałej objętości wynosi C<sub>v</sub> = ${gas.cv === 1.5 ? '3/2' : '5/2'}·R, R = 8,314 J/(mol·K).`,
     parts: [
       { kind: 'num', pts: 1, q: `Oblicz ciepło potrzebne do ogrzania gazu o ${dT} K przy stałej objętości.`, ans: Qv, unit: 'J', hint: 'Q = nC_vΔT.', steps: [`${eq(`Q<sub>v</sub> = nC<sub>v</sub>ΔT ≈ <b>${fmt(Qv)} J</b>`)}`], rubric: ['1 pkt – poprawny wynik.'] },
       { kind: 'num', pts: 2, q: `Oblicz ciepło potrzebne do ogrzania gazu o ${dT} K przy stałym ciśnieniu. Zapisz obliczenia.`, ans: Qp, unit: 'J',
@@ -78,7 +78,9 @@ G({ id: 'thermo-ciepla-molowe', area: 'thermo', title: 'Ciepła molowe C_v i C_p
 }});
 
 G({ id: 'elec-kirchhoff', area: 'elec', title: 'II prawo Kirchhoffa – dwa źródła w obwodzie', gen() {
-  const E1 = R.pick([6, 9, 12, 24]), E2 = R.pick([1.5, 3, 4.5, 6]), r1 = R.n(0.5, 2, 0.5), r2 = R.n(0.5, 2, 0.5), Rz = R.n(2, 20, 1), same = Math.random() < 0.5;
+  const E1 = R.pick([6, 9, 12, 24]), r1 = R.n(0.5, 2, 0.5), r2 = R.n(0.5, 2, 0.5), Rz = R.n(2, 20, 1), same = Math.random() < 0.5;
+  // przy połączeniu przeciwnym SEM nie mogą być równe (prąd byłby zerowy)
+  const E2 = R.pick(E1 === 6 ? [1.5, 3, 4.5] : [1.5, 3, 4.5, 6]);
   const I = (same ? E1 + E2 : E1 - E2) / (Rz + r1 + r2), U = I * Rz;
   return {
     ctx: `W jednym oczku obwodu połączono szeregowo: źródło 1 (ℰ₁ = ${pl(E1)} V, r₁ = ${pl(r1)} Ω), źródło 2 (ℰ₂ = ${pl(E2)} V, r₂ = ${pl(r2)} Ω) oraz opornik R = ${Rz} Ω. Źródła są połączone ${same ? 'zgodnie (biegun + jednego z biegunem − drugiego)' : 'przeciwnie (biegunami + do siebie)'}.`,

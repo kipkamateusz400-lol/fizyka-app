@@ -191,3 +191,6 @@ summary { cursor: pointer; font-weight: 600; padding: 4px 0 }
 .src { margin: 4px 0 10px; padding: 12px 14px; border: 1px solid var(--line); border-left: 4px solid var(--ink); border-radius: 10px; background: var(--paper); font-family: Georgia, "Times New Roman", serif; font-size: 15.5px }
 .src p { margin: 6px 0 }
 .src-h { font-family: system-ui, sans-serif; font-weight: 700; font-size: 13px; color: var(--mut); text-transform: uppercase; letter-spacing: .4px }
+/* filtr poziomów trudności – mniejsze przyciski, żeby zmieściły się na wąskim ekranie */
+.tabs.chips { gap: 5px }
+.tabs.chips a { padding: 7px 3px; font-size: 13px; font-weight: 600; line-height: 1.3 }

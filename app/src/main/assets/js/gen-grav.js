@@ -111,7 +111,7 @@ G({ id: 'grav-energia', area: 'grav', title: 'Energia potrzebna do zmiany orbity
   return {
     ctx: `Satelita o masie ${d(m)} kg przeniesiono z orbity kołowej na wysokości ${d(h1 / 1000)} km na orbitę kołową na wysokości ${d(h2 / 1000)} km nad Ziemią. Energia całkowita satelity na orbicie kołowej o promieniu r wynosi E = −GMm/(2r). ${v('M')}<sub>Z</sub> = 5,972·10²⁴ kg, ${v('R')}<sub>Z</sub> = 6378 km.`,
     parts: [
-      { kind: 'num', pts: 3, q: 'Oblicz minimalną energię, jaką trzeba było dostarczyć satelicie. Zapisz obliczenia.', ans: E, unit: 'J',
+      { kind: 'num', pts: 3, q: 'Oblicz, o ile wzrosła energia całkowita (mechaniczna) satelity – czyli jaką pracę musiały wykonać nad nim silniki. Pomiń straty: w rzeczywistości spalane paliwo dostarcza dużo więcej energii, bo większość unoszą gazy wylotowe. Zapisz obliczenia.', ans: E, unit: 'J',
         hint: 'ΔE = E₂ − E₁ = (GMm/2)(1/r₁ − 1/r₂). Pamiętaj o r = R_Z + h.',
         steps: [`${eq(`ΔE = E₂ − E₁ = −${fr('GMm', '2r₂')} + ${fr('GMm', '2r₁')} = ${fr('GMm', '2')}(${fr('1', 'r₁')} − ${fr('1', 'r₂')})`)}`, `r₁ = ${fmt(r1, 4)} m, r₂ = ${fmt(r2, 4)} m ${eq(`ΔE ≈ <b>${fmt(E)} J</b>`)}`],
         rubric: ['3 pkt – poprawny wynik.', '2 pkt – poprawne wyrażenie na ΔE z poprawnymi promieniami.', '1 pkt – zapis ΔE = E₂ − E₁ z poprawnym wzorem na energię.', '0 pkt – brak postępu.'] },

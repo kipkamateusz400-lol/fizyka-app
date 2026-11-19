@@ -8,7 +8,7 @@ const ERR = s => `<div class="warn"><b>Typowy błąd:</b> ${s}</div>`;
 const THEORY = {
 howto: { title: 'Jak rozwiązywać zadania maturalne', sections: [
   { t: 'Jak wygląda arkusz', b: `
-    <p>Egzamin trwa <b>180 minut</b>, w arkuszu jest <b>25–35 zadań</b> za łącznie <b>60 punktów</b>. Około 20% punktów to zadania zamknięte (wybór, prawda/fałsz, dobieranie), około 80% – otwarte (obliczenia, wyprowadzenia, uzasadnienia, wykresy).</p>
+    <p>Egzamin trwa <b>180 minut</b>, w arkuszu jest <b>25–35 zadań</b> za łącznie <b>60 punktów</b>. Większość punktów to zadania otwarte (obliczenia, wyprowadzenia, uzasadnienia, wykresy), a zwykle kilkanaście procent – zamknięte (wybór, prawda/fałsz, dobieranie).</p>
     <p>Zadania są często zebrane w <b>wiązki</b>: jeden opis doświadczenia lub zjawiska i 2–4 polecenia do niego. Każde polecenie z wiązki da się rozwiązać niezależnie – jeśli utkniesz w pierwszym, rób dalej.</p>
     <p>Masz do dyspozycji <b>kartę wzorów</b>, linijkę i kalkulator prosty (z pierwiastkiem). Nie musisz uczyć się wzorów na pamięć – musisz wiedzieć, <i>kiedy</i> którego użyć.</p>` },
   { t: 'Jak przyznawane są punkty', b: `
@@ -32,12 +32,13 @@ howto: { title: 'Jak rozwiązywać zadania maturalne', sections: [
     <li><b>„Wyprowadź wzór”</b> – wynik na symbolach, bez liczb.</li>
     <li><b>„Uzasadnij / wyjaśnij”</b> – powołaj się na prawo fizyczne lub zależność („ponieważ siła Lorentza jest prostopadła do prędkości, nie wykonuje pracy…”).</li>
     <li><b>„Zaplanuj doświadczenie”</b> – co mierzysz, czym, jak liczysz wynik i jak zmniejszyć niepewność (wiele pomiarów, pomiar wielu okresów naraz, wykres).</li>
+    <li><b>„Narysuj / zaznacz”</b> – rysuj ołówkiem i linijką: wektory sił (z punktem przyłożenia i właściwą długością), bieg promieni, linie pola, wykres z punktów pomiarowych. Tego aplikacja nie sprawdzi – ćwicz na kartce i porównuj z rozwiązaniem.</li>
     <li><b>„Oszacuj”</b> – wystarczy rząd wielkości, ale pokaż założenia.</li></ul>` },
   { t: 'Niepewności pomiarowe i wykresy', b: `
-    <p>Niepewność pomiaru bezpośredniego to zwykle najmniejsza działka przyrządu. Dla wielkości liczonej z kilku pomiarów stosuje się metodę najmniej korzystnego przypadku albo niepewność względną: dla iloczynu/ilorazu niepewności względne się <b>sumują</b>.</p>
-    ${F('δ(xy) = δx + δy,  δ(x²) = 2δx')}
+    <p>Niepewność pomiaru bezpośredniego to zwykle najmniejsza działka przyrządu. Dla wielkości liczonej z kilku pomiarów stosuje się metodę najmniej korzystnego przypadku albo niepewność względną (δx = Δx/x): dla iloczynu/ilorazu niepewności względne się <b>sumują</b>.</p>
+    ${F('δ(xy) = δ(x/y) = δx + δy,   δ(x²) = 2δx     (δ – niepewność względna)')}
     <p>Wykres: podpisane osie z jednostkami, punkty pomiarowe zaznaczone wyraźnie, prosta (lub krzywa) <b>poprowadzona między punktami</b>, a nie łącząca je łamaną. Nachylenie prostej odczytuj z dwóch odległych punktów prostej, nie z punktów pomiarowych.</p>
-    ${TIP('linearyzacja – jeśli T = 2π√(l/g), to wykres T² od l jest prostą o nachyleniu 4π²/g. Takie przekształcenia pojawiają się w zadaniach doświadczalnych.')}` }
+    ${TIP('linearyzacja – jeśli T = 2π√(l/g), to wykres T² od l jest prostą o nachyleniu 4π²/g. Więcej w dziale „Doświadczenia i niepewności”.')}` }
 ]},
 
 mech: { title: 'Mechanika punktu materialnego i bryły sztywnej', sections: [
@@ -45,7 +46,7 @@ mech: { title: 'Mechanika punktu materialnego i bryły sztywnej', sections: [
     <p>Położenie, przemieszczenie, prędkość i przyspieszenie to <b>wektory</b>. Prędkość to tempo zmiany położenia, przyspieszenie – tempo zmiany prędkości.</p>
     <p><b>Ruch jednostajnie zmienny</b> (a = const):</p>
     ${F('v = v₀ + at,   s = v₀t + ½at²,   v² = v₀² + 2as')}
-    <p><b>Wykres v(t)</b>: nachylenie = przyspieszenie, pole pod wykresem = przemieszczenie (droga). <b>Wykres a(t)</b>: pole = zmiana prędkości.</p>
+    <p><b>Wykres v(t)</b>: nachylenie = przyspieszenie, pole pod wykresem (ze znakiem) = przemieszczenie. Gdy ciało nie zmienia kierunku ruchu, to także droga; gdy zawraca, drogę liczysz jako sumę pól bez znaków. <b>Wykres a(t)</b>: pole = zmiana prędkości.</p>
     <p><b>Rzut poziomy i ukośny</b> – składasz dwa niezależne ruchy: w poziomie jednostajny (v<sub>x</sub> = const), w pionie jednostajnie przyspieszony z przyspieszeniem g. Wspólny jest tylko czas.</p>
     <p><b>Ruch po okręgu</b>: v = 2πr/T = ωr, przyspieszenie dośrodkowe a = v²/r = ω²r, skierowane do środka.</p>
     ${ERR('średnia prędkość to całkowita droga / całkowity czas, a nie średnia arytmetyczna prędkości.')}` },
@@ -64,7 +65,7 @@ mech: { title: 'Mechanika punktu materialnego i bryły sztywnej', sections: [
     <ul><li><b>Zderzenie sprężyste</b> – zachowany pęd i energia kinetyczna.</li>
     <li><b>Zderzenie niesprężyste</b> – zachowany tylko pęd; część energii zamienia się na ciepło, odkształcenie.</li>
     <li><b>Odrzut</b> (wystrzał, rozpad, emisja fotonu) – przed: p = 0, po: p₁ + p₂ = 0.</li></ul>
-    ${ERR('przy odbiciu piłki od ściany zmiana prędkości to v₁ + v₂, bo zmienia się zwrot. Odejmowanie samych wartości to „błąd rzeczowy” wg CKE.')}` },
+    ${ERR('przy odbiciu piłki od ściany zmiana prędkości to v₁ + v₂, bo zmienia się zwrot. Odejmowanie samych wartości to poważny błąd merytoryczny – za takie rozwiązanie nie dostaniesz punktów.')}` },
   { t: 'Praca, energia, moc', b: `
     ${F('W = F·s·cos α,   E<sub>k</sub> = ½mv²,   E<sub>p</sub> = mgh,   E<sub>spr</sub> = ½kx²,   P = W/t = Fv')}
     <p><b>Twierdzenie o pracy i energii</b>: praca siły wypadkowej = zmiana energii kinetycznej.</p>
@@ -134,7 +135,7 @@ wave: { title: 'Drgania, fale i optyka', sections: [
     <p>Przy przejściu do innego ośrodka <b>częstotliwość się nie zmienia</b>, zmienia się prędkość i długość fali.</p>
     <p><b>Interferencja</b> dwóch spójnych źródeł: wzmocnienie, gdy różnica dróg Δs = nλ, wygaszenie, gdy Δs = (n + ½)λ.</p>
     <p><b>Fala stojąca</b> (struna zamocowana na obu końcach): L = nλ/2, f<sub>n</sub> = nv/(2L). Odległość między węzłami = λ/2. Piszczałka otwarta jak struna, zamknięta z jednej strony: L = (2n−1)λ/4.</p>
-    <p><b>Efekt Dopplera</b> (dźwięk): f′ = f·(v ± v<sub>obs</sub>)/(v ∓ v<sub>ź</sub>) – górne znaki przy zbliżaniu. Zbliżanie → wyższa częstotliwość.</p>` },
+    <p><b>Efekt Dopplera</b> (dźwięk): f′ = f·(v ± v<sub>obs</sub>)/(v ∓ v<sub>ź</sub>) – górne znaki przy zbliżaniu. Zbliżanie → wyższa częstotliwość. Gdy źródło mija obserwatora, słyszana częstotliwość szybko, ale w sposób ciągły spada z wyższej na niższą.</p>` },
   { t: 'Optyka geometryczna', b: `
     <p><b>Odbicie</b>: kąt padania = kąt odbicia (mierzone od normalnej!).</p>
     <p><b>Załamanie (prawo Snelliusa)</b>:</p>
@@ -145,11 +146,26 @@ wave: { title: 'Drgania, fale i optyka', sections: [
     <li>Rozpraszająca: zawsze pozorny, prosty, pomniejszony (f &lt; 0).</li></ul>
     ${TIP('obraz pozorny daje ujemne y. Konstrukcję rób dwoma promieniami: równoległym do osi (przez ognisko) i przechodzącym przez środek soczewki (bez załamania).')}` },
   { t: 'Optyka falowa', b: `
-    <p><b>Dyfrakcja</b> – ugięcie fali na przeszkodzie porównywalnej z długością fali. <b>Siatka dyfrakcyjna</b> o stałej d (odległość szczelin):</p>
+    <p><b>Dyfrakcja</b> – ugięcie fali na przeszkodzie lub szczelinie o rozmiarze porównywalnym z długością fali. Im węższa szczelina (w stosunku do λ), tym silniej fala się ugina.</p>
+    <p><b>Pojedyncza szczelina</b> o szerokości a: na ekranie jest szeroki jasny prążek środkowy i słabsze prążki boczne. Ciemne prążki (minima) leżą w kierunkach:</p>
+    ${F('a sin θ = nλ    (n = 1, 2, 3 …, minima)')}
+    <p><b>Siatka dyfrakcyjna</b> o stałej d (odległość szczelin):</p>
     ${F('d sin θ = nλ    (prążki jasne),   d = 1/N')}
     <p>Najwyższy rząd: n<sub>max</sub> = część całkowita z d/λ. Siatka rozszczepia białe światło – czerwone ugina się najbardziej.</p>
     <p><b>Doświadczenie Younga</b> (dwie szczeliny): ten sam warunek; dla małych kątów odległość prążków Δx = λL/d.</p>
-    <p><b>Polaryzacja</b> – dowód, że światło jest falą poprzeczną. Polaryzator przepuszcza połowę natężenia światła niespolaryzowanego. <b>Prawo Malusa</b>: I = I₀cos²θ. <b>Kąt Brewstera</b>: tg α<sub>B</sub> = n₂/n₁ – światło odbite jest całkowicie spolaryzowane, a promienie odbity i załamany są prostopadłe.</p>` }
+    <p><b>Polaryzacja</b> – dowód, że światło jest falą poprzeczną. Polaryzator przepuszcza połowę natężenia światła niespolaryzowanego. <b>Prawo Malusa</b>: I = I₀cos²θ. <b>Kąt Brewstera</b>: tg α<sub>B</sub> = n₂/n₁ – światło odbite jest całkowicie spolaryzowane, a promienie odbity i załamany są prostopadłe.</p>
+    ${ERR('dla siatki warunek d sin θ = nλ daje prążki JASNE, a dla pojedynczej szczeliny a sin θ = nλ daje prążki CIEMNE.')}` },
+  { t: 'Widmo fal elektromagnetycznych', b: `
+    <p>Wszystkie fale elektromagnetyczne rozchodzą się w próżni z prędkością c = λf ≈ 3·10⁸ m/s. Różnią się długością fali (a więc i energią fotonu E = hc/λ).</p>
+    <table class="tbl"><tr><th>rodzaj</th><th>długość fali (rząd)</th><th>źródło / zastosowanie</th></tr>
+    <tr><td>fale radiowe</td><td>&gt; 1 mm (do km)</td><td>radio, telewizja, telefonia</td></tr>
+    <tr><td>mikrofale</td><td>1 mm – 30 cm</td><td>kuchenka mikrofalowa, Wi-Fi, radar</td></tr>
+    <tr><td>podczerwień</td><td>780 nm – 1 mm</td><td>ciała ciepłe, termowizja, piloty</td></tr>
+    <tr><td>światło widzialne</td><td>380 – 780 nm</td><td>od fioletu (krótkie) do czerwieni (długie)</td></tr>
+    <tr><td>nadfiolet (UV)</td><td>10 – 380 nm</td><td>Słońce, sterylizacja, opalanie</td></tr>
+    <tr><td>promieniowanie X</td><td>0,01 – 10 nm</td><td>lampa rentgenowska, diagnostyka</td></tr>
+    <tr><td>promieniowanie γ</td><td>&lt; 0,01 nm</td><td>przemiany jądrowe, radioterapia</td></tr></table>
+    ${TIP('im krótsza fala, tym większa energia fotonu i tym bardziej jonizujące promieniowanie (UV, X, γ).')}` }
 ]},
 
 elec: { title: 'Elektryczność i magnetyzm', sections: [
@@ -175,14 +191,14 @@ elec: { title: 'Elektryczność i magnetyzm', sections: [
     <p><b>Siła Lorentza</b> na ładunek: F = qvB sin α. Jest prostopadła do prędkości → nie wykonuje pracy, zmienia tylko kierunek ruchu.</p>
     ${F('r = mv/(qB),   T = 2πm/(qB)')}
     <p><b>Siła elektrodynamiczna</b> na przewodnik z prądem: F = BIl sin α. Kierunek – reguła lewej dłoni (lub iloczyn wektorowy).</p>
-    <p><b>Pole wytwarzane przez prąd</b>: prosty przewodnik B = μ₀I/(2πr), środek pętli B = μ₀I/(2r), wnętrze zwojnicy B = μ₀nI/l. Kierunek – reguła prawej dłoni.</p>
+    <p><b>Pole wytwarzane przez prąd</b>: prosty przewodnik B = μ₀I/(2πr), środek pętli B = μ₀I/(2r), wnętrze zwojnicy B = μ₀NI/l (N – liczba zwojów, l – długość zwojnicy). Kierunek – reguła prawej dłoni.</p>
     <p>Przewodniki z prądami zgodnymi się <b>przyciągają</b>, z przeciwnymi – odpychają.</p>` },
   { t: 'Indukcja elektromagnetyczna', b: `
     ${F('Φ = BS cos α,    ℰ = −ΔΦ/Δt')}
     <p>Prąd indukuje się, gdy <b>zmienia się</b> strumień magnetyczny (zmiana B, pola S, kąta). Pręt w polu: ℰ = Blv. Prądnica: ℰ<sub>max</sub> = NBSω.</p>
     <p><b>Reguła Lenza</b>: prąd indukcyjny przeciwdziała przyczynie, która go wywołała (stąd minus w prawie Faradaya i hamowanie magnesu spadającego w rurze miedzianej).</p>
     <p><b>Prąd przemienny</b>: wartości skuteczne U<sub>sk</sub> = U<sub>max</sub>/√2. <b>Transformator</b>: U₂/U₁ = N₂/N₁, w idealnym U₁I₁ = U₂I₂. Nie działa na prąd stały.</p>
-    <p><b>Fale elektromagnetyczne</b>: c = λf; widmo od fal radiowych, przez podczerwień, światło, nadfiolet, do promieniowania X i γ.</p>` }
+    <p><b>Fale elektromagnetyczne</b>: c = λf; widmo od fal radiowych, przez podczerwień, światło, nadfiolet, do promieniowania X i γ (tabela w dziale „Drgania, fale, optyka”).</p>` }
 ]},
 
 thermo: { title: 'Własności materii, termodynamika, hydrostatyka', sections: [
@@ -202,11 +218,12 @@ thermo: { title: 'Własności materii, termodynamika, hydrostatyka', sections: [
     ${F('pV = nRT,   pV/T = const')}
     <table class="tbl"><tr><th>przemiana</th><th>stałe</th><th>praca gazu W</th><th>ΔU</th></tr>
     <tr><td>izotermiczna</td><td>T</td><td>pole pod wykresem</td><td>0 → Q = W</td></tr>
-    <tr><td>izobaryczna</td><td>p</td><td>pΔV = nRΔT</td><td>(i/2)nRΔT</td></tr>
+    <tr><td>izobaryczna</td><td>p</td><td>pΔV = nRΔT</td><td>(3/2)nRΔT lub (5/2)nRΔT</td></tr>
     <tr><td>izochoryczna</td><td>V</td><td>0</td><td>Q</td></tr>
     <tr><td>adiabatyczna</td><td>Q = 0</td><td>−ΔU</td><td>−W</td></tr></table>
-    <p>Energia wewnętrzna gazu doskonałego zależy <b>tylko od temperatury</b>: U = (3/2)nRT dla gazu jednoatomowego (5/2 dla dwuatomowego).</p>
-    <p><b>Teoria kinetyczna</b>: średnia energia kinetyczna cząsteczki E = (3/2)k<sub>B</sub>T; ciśnienie wynika z uderzeń cząsteczek o ścianki.</p>
+    <p>Energia wewnętrzna gazu doskonałego zależy <b>tylko od temperatury</b>:</p>
+    ${F('U = (3/2)nRT  (gaz jednoatomowy),     U = (5/2)nRT  (gaz dwuatomowy, temperatury pokojowe)')}
+    <p><b>Teoria kinetyczna</b>: średnia energia kinetyczna ruchu postępowego cząsteczki E = (3/2)k<sub>B</sub>T; ciśnienie wynika z uderzeń cząsteczek o ścianki.</p>
     ${ERR('temperaturę we wzorach gazowych zawsze w kelwinach (T = t + 273).')}` },
   { t: 'Zasady termodynamiki i silniki', b: `
     ${F('ΔU = Q + W     (W – praca wykonana NAD gazem, tak jak w karcie CKE)')}
@@ -233,6 +250,14 @@ atom: { title: 'Elementy fizyki atomowej i jądrowej', sections: [
     <ul><li>Seria Lymana – przejścia na n = 1 (nadfiolet),</li><li>Balmera – na n = 2 (światło widzialne: 656, 486, 434, 410 nm),</li><li>Paschena – na n = 3 (podczerwień).</li></ul>
     <p>Energia jonizacji wodoru (z n = 1) = 13,6 eV. Atom pochłania tylko fotony o energiach równych różnicom poziomów (widmo absorpcyjne – ciemne linie).</p>
     <p><b>Fale materii (de Broglie)</b>: każda cząstka ma λ = h/p. Dyfrakcja elektronów potwierdza ich falową naturę. Elektron przyspieszony napięciem U: p = √(2meU).</p>` },
+  { t: 'Równoważność masy i energii', b: `
+    <p>Ciało o masie m ma <b>energię spoczynkową</b>:</p>
+    ${F('E₀ = mc²')}
+    <p>Każda zmiana energii układu ΔE oznacza zmianę jego masy Δm = ΔE/c². W życiu codziennym jest ona niezauważalna, ale w reakcjach jądrowych (defekt masy) i w gwiazdach (Słońce traci ok. 4 mln ton masy na sekundę) – kluczowa.</p>
+    <p>Dla ciała poruszającego się z prędkością porównywalną z c energia całkowita i kinetyczna wynoszą:</p>
+    ${F('E = γmc²,   E<sub>k</sub> = (γ − 1)mc²,   γ = 1/√(1 − v²/c²)')}
+    <p>Dla v ≪ c γ ≈ 1 i E<sub>k</sub> ≈ ½mv². Żadne ciało o masie niezerowej nie osiągnie prędkości c – jego energia rosłaby nieograniczenie.</p>
+    ${TIP('w zadaniach z akceleratorami i cząstkami najpierw policz E₀ = mc² (np. dla elektronu 0,511 MeV) i porównaj z energią kinetyczną: jeśli E<sub>k</sub> jest porównywalna z E₀, wzór ½mv² zawodzi.')}` },
   { t: 'Jądro atomowe', b: `
     <p>Jądro <sup>A</sup><sub>Z</sub>X: Z protonów, A − Z neutronów. Izotopy – to samo Z, różne A.</p>
     <p><b>Defekt masy</b>: jądro waży mniej niż suma jego nukleonów:</p>
@@ -248,6 +273,46 @@ atom: { title: 'Elementy fizyki atomowej i jądrowej', sections: [
     ${F('N = N₀(½)<sup>t/T</sup>,   A = λN,   λ = ln2/T<sub>1/2</sub>')}
     <p>Okres półrozpadu nie zależy od temperatury, ciśnienia ani ilości substancji.</p>
     <p><b>Zastosowania</b>: datowanie radiowęglowe (¹⁴C, T ≈ 5730 lat), medycyna (⁹⁹ᵐTc, ¹³¹I), sterylizacja. <b>Dawka pochłonięta</b> D = E/m [Gy].</p>` }
+]},
+
+dosw: { title: 'Doświadczenia, niepewności pomiarowe i wykresy', sections: [
+  { t: 'Niepewność pomiaru bezpośredniego', b: `
+    <p>Każdy pomiar ma <b>niepewność</b> – przedział, w którym z dużym prawdopodobieństwem leży wartość prawdziwa. Zapis: x = (x̄ ± Δx) jednostka.</p>
+    <ul><li><b>Przyrząd analogowy</b> (linijka, termometr, miernik wskazówkowy): Δx = najmniejsza działka skali (czasem połowa działki – jeśli zadanie tak podaje).</li>
+    <li><b>Przyrząd cyfrowy</b>: zwykle jednostka ostatniej cyfry albo wartość z instrukcji (np. „0,5% wskazania + 2 cyfry”).</li>
+    <li><b>Stoper ręczny</b>: niepewność jest większa niż działka – decyduje czas reakcji (ok. 0,1–0,2 s). Dlatego mierzy się czas wielu okresów naraz.</li></ul>
+    <p><b>Seria pomiarów</b>: wynik to średnia arytmetyczna, a niepewność można oszacować jako największe odchylenie od średniej albo połowę rozstępu (x<sub>max</sub> − x<sub>min</sub>)/2 – zawsze stosuj metodę podaną w treści zadania.</p>
+    ${ERR('błąd systematyczny (np. źle wyzerowana waga) nie znika po uśrednieniu – trzeba usunąć jego przyczynę.')}` },
+  { t: 'Niepewność wielkości obliczanej', b: `
+    <p><b>Niepewność względna</b>: δx = Δx/x (często w %). Metoda najmniej korzystnego przypadku:</p>
+    ${F('suma, różnica:  Δ(x ± y) = Δx + Δy')}
+    ${F('iloczyn, iloraz:  δ(xy) = δ(x/y) = δx + δy')}
+    ${F('potęga:  δ(xⁿ) = n·δx     (np. δ(d²) = 2δd)')}
+    <p>Przykład: gęstość walca ρ = 4m/(πd²h) → δρ = δm + 2δd + δh. Największy składnik sumy wskazuje, który pomiar trzeba poprawić.</p>
+    <p><b>Zapis wyniku</b>: niepewność zaokrąglamy (w górę) do 1–2 cyfr znaczących, a wynik do tego samego miejsca po przecinku: g = (9,8 ± 0,2) m/s², nie g = 9,8134 ± 0,2.</p>
+    ${TIP('porównując dokładność pomiarów, porównuj niepewności WZGLĘDNE, a nie bezwzględne.')}` },
+  { t: 'Wykres i prosta najlepszego dopasowania', b: `
+    <ul><li>Osie podpisane symbolem i jednostką, skala dobrana tak, by punkty zajęły większość wykresu.</li>
+    <li>Wokół punktów rysuj <b>prostokąty niepewności</b> o bokach 2Δx i 2Δy.</li>
+    <li><b>Prostą</b> prowadź tak, by przechodziła przez prostokąty niepewności (prawie) wszystkich punktów, a punkty leżały po obu jej stronach – nie łącz punktów łamaną i nie prowadź prostej „przez pierwszy i ostatni punkt”.</li>
+    <li><b>Nachylenie</b> licz z dwóch odległych punktów leżących na prostej: a = Δy/Δx (z jednostką!).</li>
+    <li>Niepewność nachylenia: poprowadź najbardziej i najmniej stromą prostą mieszczącą się w prostokątach; Δa ≈ (a<sub>max</sub> − a<sub>min</sub>)/2.</li></ul>` },
+  { t: 'Linearyzacja – jak „wyprostować” zależność', b: `
+    <p>Z prostej łatwo odczytać parametr, z krzywej – trudno. Dlatego przekształca się zmienne tak, aby wykres był prostą y = ax + b:</p>
+    <table class="tbl"><tr><th>zależność</th><th>co na osiach</th><th>nachylenie</th></tr>
+    <tr><td>T = 2π√(l/g)</td><td>T² od l</td><td>4π²/g</td></tr>
+    <tr><td>T = 2π√(m/k)</td><td>T² od m</td><td>4π²/k</td></tr>
+    <tr><td>s = ½at² (z v₀ = 0)</td><td>s od t²</td><td>a/2</td></tr>
+    <tr><td>1/f = 1/x + 1/y</td><td>1/y od 1/x</td><td>−1 (przecięcie z osią: 1/f)</td></tr>
+    <tr><td>E<sub>k</sub> = hf − W</td><td>E<sub>k</sub> od f</td><td>h (przecięcie: −W)</td></tr>
+    <tr><td>N = N₀e<sup>−λt</sup></td><td>ln N od t</td><td>−λ</td></tr></table>` },
+  { t: 'Jak zaplanować doświadczenie (polecenie „Zaplanuj…”)', b: `
+    <ol><li><b>Cel</b> – jaką wielkość wyznaczasz i z jakiego wzoru.</li>
+    <li><b>Przyrządy</b> – czym mierzysz każdą wielkość we wzorze.</li>
+    <li><b>Przebieg</b> – co zmieniasz, co mierzysz, co utrzymujesz stałe (np. mały kąt wychylenia wahadła).</li>
+    <li><b>Opracowanie</b> – jak liczysz wynik: wzór lub wykres zlinearyzowany i nachylenie.</li>
+    <li><b>Zmniejszenie niepewności</b> – powtarzanie i uśrednianie, pomiar wielu okresów naraz, większy zakres zmian, dokładniejszy przyrząd, wykres zamiast pojedynczego pomiaru.</li></ol>
+    ${TIP('egzaminator punktuje zwykle: poprawny wzór/metodę + opis pomiarów + sposób zmniejszenia niepewności. Pisz konkretnie, w punktach.')}` }
 ]}
 };
 

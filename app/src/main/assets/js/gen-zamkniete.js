@@ -52,6 +52,13 @@ const FILL_BANK = {
     { t: 'Po upływie trzech okresów połowicznego rozpadu w próbce pozostaje {0} początkowej liczby jąder, a aktywność próbki {1}.', g: [['1/8', '1/3', '1/6', '0'], ['zmalała 8 razy', 'się nie zmieniła', 'zmalała 3 razy']], c: [0, 0], e: '(1/2)³ = 1/8; A = λN.' },
     { t: 'Gdy elektron w atomie wodoru przechodzi z wyższej orbity na niższą, atom {0} foton, a energia elektronu {1}.', g: [['emituje', 'pochłania'], RMN], c: [0, 1], e: 'E<sub>foton</sub> = E<sub>m</sub> − E<sub>n</sub> > 0.' },
     { t: 'Energia spoczynkowa ciała jest {0} do jego masy. Gdy cząstka się porusza, jej energia całkowita jest {1} od energii spoczynkowej.', g: [['proporcjonalna', 'odwrotnie proporcjonalna'], ['większa', 'równa', 'mniejsza']], c: [0, 0], e: 'E₀ = mc², E = γmc², γ ≥ 1.' }
+  ],
+  dosw: [
+    { t: 'Niepewność względna iloczynu dwóch zmierzonych wielkości jest {0} ich niepewności względnych. Gdy wielkość występuje we wzorze w kwadracie, jej niepewność względna jest {1}.', g: [['sumą', 'różnicą', 'iloczynem'], ['mnożona przez 2', 'dzielona przez 2', 'pomijana']], c: [0, 0], e: 'Metoda najmniej korzystnego przypadku: δ(xy) = δx + δy, δ(x²) = 2δx.' },
+    { t: 'Wielokrotne powtórzenie pomiaru i uśrednienie wyników zmniejsza wpływ błędów {0}, ale nie usuwa błędów {1}.', g: [['przypadkowych', 'systematycznych'], ['systematycznych', 'przypadkowych']], c: [0, 0], e: 'Błąd systematyczny (np. źle wyzerowany przyrząd) przesuwa każdy wynik tak samo – średnia go nie usuwa.' },
+    { t: 'Prostą najlepszego dopasowania prowadzi się tak, aby {0}. Jej nachylenie odczytuje się z dwóch punktów leżących {1}.', g: [['przechodziła przez prostokąty niepewności (prawie) wszystkich punktów', 'łączyła pierwszy i ostatni punkt pomiarowy'], ['na prostej, daleko od siebie', 'w miejscu punktów pomiarowych, blisko siebie']], c: [0, 0], e: 'Punkty pomiarowe mają niepewności – prosta uśrednia je, a odległe punkty prostej dają dokładniejsze nachylenie.' },
+    { t: 'Aby wyznaczyć g z zależności T = 2π√(l/g), na osiach wykresu umieszcza się {0} i l, a nachylenie otrzymanej prostej jest równe {1}.', g: [['T²', 'T', '√T'], ['4π²/g', 'g', '2π/g']], c: [0, 0], e: 'T² = (4π²/g)·l – linearyzacja.' },
+    { t: 'Amperomierz włącza się do obwodu {0}, a woltomierz {1} do badanego elementu.', g: [['szeregowo', 'równolegle'], ['równolegle', 'szeregowo']], c: [0, 0], e: 'Amperomierz mierzy prąd płynący PRZEZ element (mały opór), woltomierz – napięcie NA elemencie (duży opór).' }
   ]
 };
 
@@ -67,6 +74,7 @@ const MATCH_BANK = {
   ],
   elec: [{ q: 'Dobierz do wielkości fizycznej jej jednostkę (A–E).', items: ['indukcja magnetyczna', 'strumień magnetyczny', 'pojemność elektryczna', 'opór właściwy', 'natężenie pola elektrycznego'], opts: ['T (tesla)', 'Wb (weber)', 'F (farad)', 'Ω·m', 'V/m'], c: [0, 1, 2, 3, 4], e: 'Wb = T·m², F = C/V, V/m = N/C.' }],
   mech: [{ q: 'Dobierz do sytuacji prawo, które ją najlepiej wyjaśnia (A–D).', items: ['odrzut armaty po wystrzale', 'pasażer „leci” do przodu, gdy autobus gwałtownie hamuje', 'wiosło odpycha wodę do tyłu, a łódź płynie do przodu', 'ta sama siła nadaje lżejszemu wózkowi większe przyspieszenie'], opts: ['zasada zachowania pędu', 'I zasada dynamiki (bezwładność)', 'III zasada dynamiki', 'II zasada dynamiki'], c: [0, 1, 2, 3], e: 'Odrzut – pęd układu = 0 przed i po; bezwładność; akcja–reakcja; a = F/m.' }],
+  dosw: [{ q: 'Dobierz do zależności sposób jej linearyzacji – co odłożyć na osiach, aby otrzymać prostą (A–E).', items: ['T = 2π√(l/g)', 's = at²/2 (v₀ = 0)', '1/f = 1/x + 1/y', 'E<sub>k</sub> = hf − W', 'N = N₀e<sup>−λt</sup>'], opts: ['T² od l', 's od t²', '1/y od 1/x', 'E<sub>k</sub> od f', 'ln N od t'], c: [0, 1, 2, 3, 4], e: 'Przekształcamy wzór do postaci y = ax + b; nachylenie i punkt przecięcia osi dają szukane wielkości.' }],
   grav: [{ q: 'Dobierz do prawa Keplera jego treść (A–C).', items: ['I prawo Keplera', 'II prawo Keplera', 'III prawo Keplera'], opts: ['orbity planet są elipsami, a Słońce jest w jednym z ognisk', 'promień wodzący planety zakreśla równe pola w równych odstępach czasu', 'T²/a³ jest takie samo dla wszystkich planet Układu Słonecznego'], c: [0, 1, 2], e: 'II prawo wynika z zachowania momentu pędu, III – z prawa powszechnego ciążenia.' }]
 };
 

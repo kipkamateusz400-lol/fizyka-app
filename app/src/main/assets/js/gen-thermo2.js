@@ -5,12 +5,12 @@ G({ id: 'thermo-vsr', area: 'thermo', title: 'Teoria kinetyczna – prędkość 
   const gas = R.pick([{ n: 'helu', M: 0.004 }, { n: 'azotu', M: 0.028 }, { n: 'tlenu', M: 0.032 }, { n: 'wodoru', M: 0.002 }, { n: 'argonu', M: 0.040 }]);
   const T = R.n(250, 600, 10), vr = Math.sqrt(3 * C.R * T / gas.M), Ek = 1.5 * C.kB * T;
   return {
-    ctx: `Gaz – cząsteczki ${gas.n} (masa molowa ${pl(gas.M * 1000)} g/mol) – ma temperaturę ${d(T)} K. Traktuj go jak gaz doskonały. R = 8,31 J/(mol·K), k<sub>B</sub> = 1,38·10⁻²³ J/K.`,
+    ctx: `Gaz – cząsteczki ${gas.n} (masa molowa ${pl(gas.M * 1000)} g/mol) – ma temperaturę ${d(T)} K. Traktuj go jak gaz doskonały. R = 8,314 J/(mol·K), k<sub>B</sub> = 1,38·10⁻²³ J/K.`,
     parts: [
       { kind: 'num', pts: 1, q: 'Oblicz średnią energię kinetyczną ruchu postępowego jednej cząsteczki.', ans: Ek, unit: 'J', hint: 'E = (3/2)k_B·T – nie zależy od rodzaju gazu.', steps: [`${eq(`E = ${fr('3', '2')}k<sub>B</sub>T ≈ <b>${fmt(Ek)} J</b>`)}`], rubric: ['1 pkt – poprawny wynik.'] },
       { kind: 'num', pts: 2, q: 'Oblicz średnią kwadratową prędkość cząsteczek. Zapisz obliczenia.', ans: vr, unit: 'm/s',
         hint: '½m₀v² = (3/2)k_BT. Masa cząsteczki m₀ = M/N_A, a k_B·N_A = R, więc v = √(3RT/M).',
-        steps: [`${eq(`${fr('m₀v²', '2')} = ${fr('3', '2')}k<sub>B</sub>T → v = ${sq(fr('3RT', 'M'))}`)}`, `${eq(`v = ${sq(fr(`3·8,31·${d(T)}`, pl(gas.M)))} ≈ <b>${fmt(vr)} m/s</b>`)}`], rubric: ['2 pkt – poprawny wynik.', '1 pkt – poprawne powiązanie energii kinetycznej z temperaturą.', '0 pkt – np. masa molowa w g/mol zamiast kg/mol.'] },
+        steps: [`${eq(`${fr('m₀v²', '2')} = ${fr('3', '2')}k<sub>B</sub>T → v = ${sq(fr('3RT', 'M'))}`)}`, `${eq(`v = ${sq(fr(`3·8,314·${d(T)}`, pl(gas.M)))} ≈ <b>${fmt(vr)} m/s</b>`)}`], rubric: ['2 pkt – poprawny wynik.', '1 pkt – poprawne powiązanie energii kinetycznej z temperaturą.', '0 pkt – np. masa molowa w g/mol zamiast kg/mol.'] },
       { kind: 'mc', pts: 1, q: 'Ile razy wzrośnie średnia kwadratowa prędkość cząsteczek, gdy temperatura bezwzględna wzrośnie 4 razy?', options: ['2 razy', '4 razy', '16 razy', '√2 razy'], correct: 0, steps: ['v ∝ √T → √4 = 2.'] }
     ]
   };

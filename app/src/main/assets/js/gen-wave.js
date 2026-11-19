@@ -120,7 +120,7 @@ G({ id: 'wave-doppler', area: 'wave', title: 'Efekt Dopplera', gen() {
       { kind: 'tf', pts: 1, q: 'Oceń prawdziwość zdań.', statements: R.shuffle([
         { s: 'Długość fali docierającej do obserwatora przed zbliżającym się źródłem jest mniejsza niż przy źródle nieruchomym.', v: true },
         { s: 'Efekt Dopplera dotyczy tylko fal dźwiękowych.', v: false },
-        { s: 'Gdy karetka mija obserwatora, słyszana częstotliwość skokowo maleje.', v: true }
+        { s: 'Gdy karetka mija obserwatora, słyszana częstotliwość szybko (ale w sposób ciągły) maleje – od wartości wyższej do niższej niż częstotliwość syreny.', v: true }
       ]) }
     ]
   };
